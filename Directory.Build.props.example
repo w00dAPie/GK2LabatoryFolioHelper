@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Copy this file to Directory.Build.props and change the path locally. -->
+    <GameDir>G:\SteamLibrary\steamapps\common\Graveyard Keeper 2</GameDir>
+  </PropertyGroup>
+</Project>

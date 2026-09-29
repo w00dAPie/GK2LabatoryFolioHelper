@@ -1,0 +1,45 @@
+﻿# GK2 Laboratory Folio Helper
+
+A BepInEx mod for **Graveyard Keeper 2** that improves the alchemy folio and laboratory workflow.
+
+## Features
+
+- Pin up to **4 known alchemy formulas** from the folio.
+- Shows pinned formulas directly on the HUD.
+- Automatically selects the best known ingredient mix for each formula.
+- Displays:
+  - recipe status: **Ready** / **Missing**
+  - owned vs. required ingredient counts
+  - buyable ingredients
+  - vendor name and stock when available
+- Ingredient ownership shown by the HUD is based on the **player inventory**.
+- Laboratory crafting still uses the laboratory's normal accessible craft inventories and storage.
+- Laboratory II recipe helper:
+  - open the pinned recipe picker from the result slot
+  - choose a pinned recipe
+  - automatically load the best available known mix
+- Controller support for the pinned recipe picker.
+- Optional HUD compatibility with:
+  - **Pin My Recipe**
+  - **GK2 Shopping List**
+
+These integrations are optional. The mod does not require either of them.
+
+## Requirements
+
+- Graveyard Keeper 2
+- BepInEx 5
+- .NET Framework 4.7.2 target
+
+Tested with:
+
+- Graveyard Keeper 2 **1.007.1**
+- BepInEx **5.4.23.5**
+
+## Installation
+
+1. Install BepInEx 5 for Graveyard Keeper 2.
+2. Create:
+
+```text
+BepInEx/plugins/GK2LaboratoryFolioHelper
