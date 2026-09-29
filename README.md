@@ -150,4 +150,4 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-No license has been selected yet.
+This project is licensed under the [MIT License](LICENSE).
