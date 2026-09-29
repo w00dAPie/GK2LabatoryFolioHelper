@@ -68,7 +68,7 @@ internal static class ShoppingListCompatibilityPatch
             plugin = instance;
             config.SettingChanged += OnSettingChanged;
             installed = true;
-            Plugin.Log.LogInfo("Shopping List HUD change hooks installed (no frame polling).");
+            Plugin.Log.LogDebug("Shopping List HUD change hooks installed (no frame polling).");
         }
         catch (Exception ex)
         {

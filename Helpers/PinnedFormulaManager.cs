@@ -44,7 +44,7 @@ internal static class PinnedFormulaManager
         {
             if (PinnedFormulaIds.Count >= MaxPins)
             {
-                Plugin.Log.LogInfo(
+                Plugin.Log.LogDebug(
                     $"Cannot pin '{formula.id}': maximum of {MaxPins} alchemy pins reached."
                 );
 
@@ -56,7 +56,7 @@ internal static class PinnedFormulaManager
             pinned = true;
         }
 
-        Plugin.Log.LogInfo($"{(pinned ? "Pinned" : "Unpinned")} formula '{formula.id}'");
+        Plugin.Log.LogDebug($"{(pinned ? "Pinned" : "Unpinned")} formula '{formula.id}'");
 
         PinsChanged?.Invoke();
 
@@ -82,6 +82,11 @@ internal static class PinnedFormulaManager
 
             MixCandidate best = GetBestCandidate(formula);
 
+            MixCandidate bestWithoutPowder =
+                best != null && best.ContainsPowder
+                    ? GetBestCandidate(formula, excludePowder: true)
+                    : null;
+
             if (best == null)
             {
                 result.Add(
@@ -105,6 +110,11 @@ internal static class PinnedFormulaManager
                     StatusText = best.IsCraftable ? "Ready" : $"Missing {best.MissingItemCount}",
                     IsCraftable = best.IsCraftable,
                     Ingredients = BuildIngredientViewData(best),
+
+                    NoPowderIngredients =
+                        bestWithoutPowder != null && bestWithoutPowder.MixId != best.MixId
+                            ? BuildIngredientViewData(bestWithoutPowder)
+                            : new List<PinnedIngredientViewData>(),
                 }
             );
         }
@@ -146,6 +156,197 @@ internal static class PinnedFormulaManager
         return MainGame.Instance.GameSave.knowledgeSystem.IsAlchemyFormulaKnown(formula);
     }
 
+    public static string GetBestMixIdForLaboratory(string formulaId)
+    {
+        return TryGetBestMixForLaboratory(formulaId, out string mixId, out _) ? mixId : null;
+    }
+
+    public static bool TryGetBestMixForLaboratory(
+        string formulaId,
+        out string mixId,
+        out bool isCraftable
+    )
+    {
+        mixId = null;
+        isCraftable = false;
+
+        if (string.IsNullOrEmpty(formulaId))
+        {
+            return false;
+        }
+
+        AlchemyFormulaDef formula = GameBalance.Me.GetDataOrNull<AlchemyFormulaDef>(formulaId);
+
+        if (formula == null || !IsFormulaKnown(formula))
+        {
+            return false;
+        }
+
+        MultiInventory inventory = MainGame.PlayerController?.WorkerMultiInventory;
+
+        if (inventory == null)
+        {
+            MixCandidate fallback = GetBestCandidate(formula);
+
+            if (fallback == null)
+            {
+                return false;
+            }
+
+            mixId = fallback.MixId;
+            isCraftable = fallback.IsCraftable;
+
+            return true;
+        }
+
+        MixCandidate best = null;
+
+        foreach (AlchemyMixSourceDef source in GameBalance.Me.alchemyMixSourceDefs)
+        {
+            if (source == null || source.formulaId != formula.id)
+            {
+                continue;
+            }
+
+            MixCandidate candidate = CreateCraftingCandidate(source, inventory);
+
+            if (candidate == null)
+            {
+                continue;
+            }
+
+            if (best == null || IsBetterCraftingCandidate(candidate, best))
+            {
+                best = candidate;
+            }
+        }
+
+        if (best == null)
+        {
+            return false;
+        }
+
+        mixId = best.MixId;
+        isCraftable = best.IsCraftable;
+
+        return true;
+    }
+
+    private static MixCandidate CreateCraftingCandidate(
+        AlchemyMixSourceDef source,
+        MultiInventory inventory
+    )
+    {
+        Dictionary<string, int> requiredCounts = new();
+
+        Add(source.ingredient1);
+        Add(source.ingredient2);
+        Add(source.ingredient3);
+
+        if (requiredCounts.Count == 0)
+        {
+            return null;
+        }
+
+        List<MixIngredient> ingredients = new();
+
+        int totalIngredientCount = 0;
+        int ownedItemCount = 0;
+        int missingItemCount = 0;
+        bool containsPowder = false;
+
+        foreach (KeyValuePair<string, int> entry in requiredCounts)
+        {
+            ItemDef itemDef = GameBalance.Me.GetDataOrNull<ItemDef>(entry.Key);
+
+            if (itemDef == null || !IsIngredientKnown(itemDef))
+            {
+                return null;
+            }
+
+            int required = entry.Value;
+            int owned = inventory.GetTotalCount(itemDef.id);
+
+            IngredientAvailability.Result availability = IngredientAvailability.Get(
+                itemDef,
+                required
+            );
+
+            totalIngredientCount += required;
+            ownedItemCount += Mathf.Min(owned, required);
+            missingItemCount += Mathf.Max(0, required - owned);
+
+            if (IsAlchemyPowder(itemDef))
+            {
+                containsPowder = true;
+            }
+
+            ingredients.Add(
+                new MixIngredient
+                {
+                    ItemDef = itemDef,
+                    RequiredCount = required,
+                    Availability = availability,
+                }
+            );
+        }
+
+        return new MixCandidate
+        {
+            MixId = source.mixId,
+            TotalIngredientCount = totalIngredientCount,
+            OwnedItemCount = ownedItemCount,
+            MissingItemCount = missingItemCount,
+            UnobtainableMissingCount = missingItemCount,
+            ContainsPowder = containsPowder,
+            Ingredients = ingredients,
+        };
+
+        void Add(string itemId)
+        {
+            if (string.IsNullOrEmpty(itemId))
+            {
+                return;
+            }
+
+            if (requiredCounts.TryGetValue(itemId, out int count))
+            {
+                requiredCounts[itemId] = count + 1;
+            }
+            else
+            {
+                requiredCounts[itemId] = 1;
+            }
+        }
+    }
+
+    private static bool IsBetterCraftingCandidate(MixCandidate candidate, MixCandidate currentBest)
+    {
+        // Beim tatsächlichen Craften hat "kann ich jetzt herstellen?"
+        // Vorrang vor der theoretisch kürzesten Formel.
+        if (candidate.IsCraftable != currentBest.IsCraftable)
+        {
+            return candidate.IsCraftable;
+        }
+
+        if (candidate.MissingItemCount != currentBest.MissingItemCount)
+        {
+            return candidate.MissingItemCount < currentBest.MissingItemCount;
+        }
+
+        if (candidate.TotalIngredientCount != currentBest.TotalIngredientCount)
+        {
+            return candidate.TotalIngredientCount < currentBest.TotalIngredientCount;
+        }
+
+        if (candidate.OwnedItemCount != currentBest.OwnedItemCount)
+        {
+            return candidate.OwnedItemCount > currentBest.OwnedItemCount;
+        }
+
+        return string.CompareOrdinal(candidate.MixId, currentBest.MixId) < 0;
+    }
+
     private static bool IsIngredientKnown(ItemDef itemDef)
     {
         if (itemDef == null)
@@ -168,7 +369,10 @@ internal static class PinnedFormulaManager
         return MainGame.Instance.GameSave.knowledgeSystem.IsSurveyCompleted(surveyDef);
     }
 
-    private static MixCandidate GetBestCandidate(AlchemyFormulaDef formula)
+    private static MixCandidate GetBestCandidate(
+        AlchemyFormulaDef formula,
+        bool excludePowder = false
+    )
     {
         if (formula == null)
         {
@@ -191,6 +395,11 @@ internal static class PinnedFormulaManager
             MixCandidate candidate = CreateCandidate(source, knowledgeCache, availabilityCache);
 
             if (candidate == null)
+            {
+                continue;
+            }
+
+            if (excludePowder && candidate.ContainsPowder)
             {
                 continue;
             }
@@ -228,6 +437,7 @@ internal static class PinnedFormulaManager
         int ownedItemCount = 0;
         int missingItemCount = 0;
         int unobtainableMissingCount = 0;
+        bool containsPowder = false;
 
         List<MixIngredient> ingredients = new(requiredCounts.Count);
 
@@ -238,6 +448,11 @@ internal static class PinnedFormulaManager
             if (itemDef == null)
             {
                 return null;
+            }
+
+            if (IsAlchemyPowder(itemDef))
+            {
+                containsPowder = true;
             }
 
             if (!knowledgeCache.TryGetValue(itemDef.id, out bool known))
@@ -300,6 +515,7 @@ internal static class PinnedFormulaManager
             OwnedItemCount = ownedItemCount,
             MissingItemCount = missingItemCount,
             UnobtainableMissingCount = unobtainableMissingCount,
+            ContainsPowder = containsPowder,
             Ingredients = ingredients,
         };
 
@@ -321,6 +537,13 @@ internal static class PinnedFormulaManager
                 requiredCounts[itemId] = 1;
             }
         }
+    }
+
+    private static bool IsAlchemyPowder(ItemDef itemDef)
+    {
+        return itemDef != null
+            && !string.IsNullOrEmpty(itemDef.id)
+            && itemDef.id.StartsWith("powder_", StringComparison.Ordinal);
     }
 
     private static bool IsBetterCandidate(MixCandidate candidate, MixCandidate currentBest)
@@ -479,6 +702,9 @@ internal static class PinnedFormulaManager
 
         public List<PinnedIngredientViewData> Ingredients { get; set; } =
             new List<PinnedIngredientViewData>();
+
+        public List<PinnedIngredientViewData> NoPowderIngredients { get; set; } =
+            new List<PinnedIngredientViewData>();
     }
 
     internal sealed class PinnedIngredientViewData
@@ -513,6 +739,8 @@ internal static class PinnedFormulaManager
         public List<MixIngredient> Ingredients { get; set; }
 
         public bool IsCraftable => MissingItemCount == 0;
+
+        public bool ContainsPowder { get; set; }
     }
 
     private sealed class MixIngredient

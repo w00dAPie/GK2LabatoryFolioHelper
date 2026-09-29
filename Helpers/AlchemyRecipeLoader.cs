@@ -63,7 +63,7 @@ internal static class AlchemyRecipeLoader
             {
                 string itemId = mix.ingredients[i];
 
-                int availableCount = MainGame.PlayerData.Inventory.Data.GetTotalCountInInventory(
+                int availableCount = MainGame.PlayerController.WorkerMultiInventory.GetTotalCount(
                     itemId
                 );
 
@@ -82,7 +82,7 @@ internal static class AlchemyRecipeLoader
 
         RedrawMethod?.Invoke(window, new object[] { mix });
 
-        Plugin.Log.LogInfo($"Loaded pinned alchemy mix '{mixId}'.");
+        Plugin.Log.LogDebug($"Loaded pinned alchemy mix '{mixId}'.");
 
         return true;
     }

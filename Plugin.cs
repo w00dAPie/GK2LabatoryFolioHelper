@@ -19,7 +19,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "w00dst0ckOos.GK2LaboratoryFolioHelper";
     public const string PluginName = "GK2 Laboratory Folio Helper";
-    public const string PluginVersion = "0.1.0";
+    public const string PluginVersion = "0.2.0";
 
     internal static ManualLogSource Log;
 

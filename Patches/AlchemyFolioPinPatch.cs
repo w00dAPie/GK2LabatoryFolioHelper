@@ -55,13 +55,20 @@ internal static class AlchemyFolioPinPatch
 
             nameLabel.text = LLBase.L(displayItemDef.id);
         }
-        void TogglePin(UIItemCell _)
+
+        void HandleFormulaPress(UIItemCell _)
         {
+            if (AlchemyFolioSelectionContext.IsActive)
+            {
+                SelectFormulaForLaboratory(formula);
+                return;
+            }
+
             PinnedFormulaManager.Toggle(formula);
             RefreshPinVisual();
         }
 
-        itemCell.OnItemCellPress = TogglePin;
+        itemCell.OnItemCellPress = HandleFormulaPress;
 
         if (parent.GamepadNavigationItem != null)
         {
@@ -73,5 +80,55 @@ internal static class AlchemyFolioPinPatch
         }
 
         RefreshPinVisual();
+    }
+
+    private static void SelectFormulaForLaboratory(AlchemyFormulaDef formula)
+    {
+        if (formula == null || !AlchemyFolioSelectionContext.IsActive)
+        {
+            return;
+        }
+
+        UIAlchemyWindow alchemyWindow = AlchemyFolioSelectionContext.Window;
+
+        bool found = PinnedFormulaManager.TryGetBestMixForLaboratory(
+            formula.id,
+            out string mixId,
+            out bool isCraftable
+        );
+
+        if (!found || string.IsNullOrEmpty(mixId))
+        {
+            Plugin.Log.LogWarning($"No usable laboratory mix found for '{formula.id}'.");
+
+            return;
+        }
+
+        UIAlchemyFolioWindow folio = LazyUI.GetWindow<UIAlchemyFolioWindow>();
+
+        if (!isCraftable && !PinnedFormulaManager.IsPinned(formula.id))
+        {
+            PinnedFormulaManager.Toggle(formula);
+
+            Plugin.Log.LogInfo(
+                $"Alchemy formula pinned because ingredients are missing | "
+                    + $"formula='{formula.id}' | "
+                    + $"mix='{mixId}'"
+            );
+        }
+
+        AlchemyFolioSelectionContext.End();
+
+        folio?.Close();
+
+        bool loaded = AlchemyRecipeLoader.LoadMix(alchemyWindow, mixId);
+
+        Plugin.Log.LogInfo(
+            $"Alchemy formula selected from folio | "
+                + $"formula='{formula.id}' | "
+                + $"mix='{mixId}' | "
+                + $"craftable={isCraftable} | "
+                + $"loaded={loaded}"
+        );
     }
 }

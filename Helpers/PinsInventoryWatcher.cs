@@ -13,7 +13,7 @@ internal static class PinsInventoryWatcher
         SubscribePlayerInventory();
         SubscribeVendors();
 
-        Plugin.Log.LogInfo(
+        Plugin.Log.LogDebug(
             $"Pins inventory watcher initialized | " + $"inventories={SubscribedInventories.Count}"
         );
     }

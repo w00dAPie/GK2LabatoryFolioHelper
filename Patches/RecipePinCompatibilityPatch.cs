@@ -46,7 +46,7 @@ internal static class RecipePinCompatibilityPatch
 
         installed = true;
 
-        Plugin.Log.LogInfo("RecipePin HUD change hooks installed.");
+        Plugin.Log.LogDebug("RecipePin HUD change hooks installed.");
     }
 
     private static void PatchPostfix(Harmony harmony, Type type, string methodName)

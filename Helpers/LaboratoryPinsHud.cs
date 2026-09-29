@@ -137,7 +137,7 @@ internal static class LaboratoryPinsHud
 
         Refresh();
 
-        Plugin.Log.LogInfo("Laboratory pins HUD initialized.");
+        Plugin.Log.LogDebug("Laboratory pins HUD initialized.");
     }
 
     public static void Refresh()
@@ -228,14 +228,26 @@ internal static class LaboratoryPinsHud
             $"Pin_{pin.FormulaId}",
             typeof(RectTransform),
             typeof(Image),
+            typeof(LazyButton),
             typeof(HorizontalLayoutGroup)
         );
         AttachToHud(blockObject, contentRoot);
 
         Image background = blockObject.GetComponent<Image>();
-        // Same flat card color as RecipePin's CreateCompactVisual.
         background.color = CardColor;
-        background.raycastTarget = false;
+        background.raycastTarget = true;
+
+        LazyButton button = blockObject.GetComponent<LazyButton>();
+
+        AlchemyFormulaDef formula = GameBalance.Me.GetDataOrNull<AlchemyFormulaDef>(pin.FormulaId);
+
+        if (button != null && formula != null)
+        {
+            button.interactable = true;
+
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => PinnedFormulaManager.Toggle(formula));
+        }
 
         HorizontalLayoutGroup blockLayout = blockObject.GetComponent<HorizontalLayoutGroup>();
         blockLayout.padding = new RectOffset(6, 6, 4, 4);
@@ -253,12 +265,13 @@ internal static class LaboratoryPinsHud
             typeof(LayoutElement)
         );
         AttachToHud(header, blockObject.transform);
+
         LayoutElement headerSize = header.GetComponent<LayoutElement>();
         headerSize.minWidth = 108f;
         headerSize.preferredWidth = 108f;
-        // Otherwise the nested title's flexible width also makes Header expand.
         headerSize.flexibleWidth = 0f;
         headerSize.minHeight = 30f;
+
         HorizontalLayoutGroup headerLayout = header.GetComponent<HorizontalLayoutGroup>();
         headerLayout.spacing = 7f;
         headerLayout.childAlignment = TextAnchor.MiddleLeft;
@@ -267,7 +280,6 @@ internal static class LaboratoryPinsHud
         headerLayout.childForceExpandWidth = false;
         headerLayout.childForceExpandHeight = false;
 
-        AlchemyFormulaDef formula = GameBalance.Me.GetDataOrNull<AlchemyFormulaDef>(pin.FormulaId);
         CreateItemIcon(header.transform, formula?.ItemDef, 30f, true);
 
         GameObject titleGroup = new GameObject(
@@ -277,10 +289,12 @@ internal static class LaboratoryPinsHud
             typeof(LayoutElement)
         );
         AttachToHud(titleGroup, header.transform);
+
         LayoutElement titleSize = titleGroup.GetComponent<LayoutElement>();
         titleSize.minWidth = 0f;
         titleSize.preferredWidth = 0f;
         titleSize.flexibleWidth = 1f;
+
         VerticalLayoutGroup titleLayout = titleGroup.GetComponent<VerticalLayoutGroup>();
         titleLayout.childControlWidth = true;
         titleLayout.childControlHeight = true;
@@ -297,6 +311,7 @@ internal static class LaboratoryPinsHud
             Color.white,
             wrap: true
         );
+
         CreateText(
             titleGroup.transform,
             pin.StatusText,
@@ -314,12 +329,13 @@ internal static class LaboratoryPinsHud
             typeof(LayoutElement)
         );
         AttachToHud(ingredients, blockObject.transform);
+
         LayoutElement ingredientSize = ingredients.GetComponent<LayoutElement>();
         ingredientSize.minWidth = 0f;
         ingredientSize.preferredWidth = 0f;
         ingredientSize.flexibleWidth = 1f;
+
         VerticalLayoutGroup ingredientLayout = ingredients.GetComponent<VerticalLayoutGroup>();
-        // Separate complete ingredients, keeping each vendor attached to its own row.
         ingredientLayout.spacing = 3f;
         ingredientLayout.childAlignment = TextAnchor.MiddleLeft;
         ingredientLayout.childControlWidth = true;
@@ -331,11 +347,31 @@ internal static class LaboratoryPinsHud
         {
             CreateIngredientRow(ingredients.transform, ingredient);
         }
+
+        if (pin.NoPowderIngredients.Count > 0)
+        {
+            CreateText(
+                ingredients.transform,
+                "No powder",
+                10f,
+                13f,
+                TextAlignmentOptions.Left,
+                new Color(0.72f, 0.72f, 0.72f)
+            );
+
+            foreach (
+                PinnedFormulaManager.PinnedIngredientViewData ingredient in pin.NoPowderIngredients
+            )
+            {
+                CreateIngredientRow(ingredients.transform, ingredient, alternative: true);
+            }
+        }
     }
 
     private static void CreateIngredientRow(
         Transform parent,
-        PinnedFormulaManager.PinnedIngredientViewData ingredient
+        PinnedFormulaManager.PinnedIngredientViewData ingredient,
+        bool alternative = false
     )
     {
         Color color =
@@ -343,48 +379,50 @@ internal static class LaboratoryPinsHud
             : ingredient.IsBuyable ? new Color(0.45f, 0.72f, 0.95f)
             : new Color(0.91f, 0.70f, 0.42f);
 
-        GameObject ingredientBlock = new GameObject(
-            $"Ingredient_{ingredient.ItemId}",
-            typeof(RectTransform),
-            typeof(VerticalLayoutGroup)
-        );
-        AttachToHud(ingredientBlock, parent);
-        VerticalLayoutGroup ingredientLayout = ingredientBlock.GetComponent<VerticalLayoutGroup>();
-        ingredientLayout.childAlignment = TextAnchor.UpperLeft;
-        ingredientLayout.childControlWidth = true;
-        ingredientLayout.childControlHeight = true;
-        ingredientLayout.childForceExpandWidth = true;
-        ingredientLayout.childForceExpandHeight = false;
-
         GameObject row = new GameObject(
-            "NameAndCount",
+            $"Ingredient_{ingredient.ItemId}",
             typeof(RectTransform),
             typeof(HorizontalLayoutGroup),
             typeof(LayoutElement)
         );
-        AttachToHud(row, ingredientBlock.transform);
-        // Let wrapped names (including rune sprites) determine the row height.
-        row.GetComponent<LayoutElement>().minHeight = 18f;
+
+        AttachToHud(row, parent);
+
+        LayoutElement rowElement = row.GetComponent<LayoutElement>();
+        rowElement.minHeight = alternative ? 14f : 16f;
+
         HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
-        layout.spacing = 5f;
-        layout.childAlignment = TextAnchor.UpperLeft;
+
+        layout.spacing = 4f;
+        layout.childAlignment = TextAnchor.MiddleLeft;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
 
         ItemDef item = GameBalance.Me.GetDataOrNull<ItemDef>(ingredient.ItemId);
-        CreateItemIcon(row.transform, item, 16f, false);
+
+        CreateItemIcon(row.transform, item, alternative ? 12f : 14f, false);
+
+        string nameText = ingredient.Name;
+
+        if (ingredient.IsBuyable && !string.IsNullOrEmpty(ingredient.VendorName))
+        {
+            nameText += $"  <size=10>{ingredient.VendorName} ({ingredient.VendorStock})</size>";
+        }
+
         TextMeshProUGUI name = CreateText(
             row.transform,
-            ingredient.Name,
-            13f,
-            18f,
+            nameText,
+            alternative ? 11f : 12f,
+            alternative ? 14f : 16f,
             TextAlignmentOptions.Left,
             color,
             wrap: true
         );
+
         LayoutElement nameLayout = name.GetComponent<LayoutElement>();
+
         nameLayout.minWidth = 0f;
         nameLayout.preferredWidth = 0f;
         nameLayout.flexibleWidth = 1f;
@@ -392,33 +430,17 @@ internal static class LaboratoryPinsHud
         TextMeshProUGUI count = CreateText(
             row.transform,
             ingredient.CountText,
-            13f,
-            18f,
+            alternative ? 11f : 12f,
+            alternative ? 14f : 16f,
             TextAlignmentOptions.Right,
             color
         );
-        LayoutElement countLayout = count.GetComponent<LayoutElement>();
-        float countWidth = Mathf.Max(
-            32f,
-            Mathf.Ceil(count.GetPreferredValues(ingredient.CountText).x)
-        );
-        countLayout.minWidth = countWidth;
-        countLayout.preferredWidth = countWidth;
-        countLayout.flexibleWidth = 0f;
 
-        if (ingredient.IsBuyable && !string.IsNullOrEmpty(ingredient.VendorName))
-        {
-            TextMeshProUGUI vendor = CreateText(
-                ingredientBlock.transform,
-                $"{ingredient.VendorName} ({ingredient.VendorStock})",
-                12f,
-                15f,
-                TextAlignmentOptions.Left,
-                color,
-                wrap: true
-            );
-            vendor.margin = new Vector4(21f, 0f, 0f, 0f);
-        }
+        LayoutElement countLayout = count.GetComponent<LayoutElement>();
+
+        countLayout.minWidth = 30f;
+        countLayout.preferredWidth = 30f;
+        countLayout.flexibleWidth = 0f;
     }
 
     private static void CreateItemIcon(Transform parent, ItemDef item, float side, bool framed)
@@ -541,33 +563,54 @@ internal static class LaboratoryPinsHud
         {
             var before = previous[i];
             var after = current[i];
+
             if (
                 before.FormulaId != after.FormulaId
                 || before.Name != after.Name
                 || before.StatusText != after.StatusText
                 || before.IsCraftable != after.IsCraftable
-                || before.Ingredients.Count != after.Ingredients.Count
+                || !HaveSameIngredients(before.Ingredients, after.Ingredients)
+                || !HaveSameIngredients(before.NoPowderIngredients, after.NoPowderIngredients)
             )
             {
                 return false;
             }
+        }
 
-            for (int j = 0; j < after.Ingredients.Count; j++)
+        return true;
+    }
+
+    private static bool HaveSameIngredients(
+        List<PinnedFormulaManager.PinnedIngredientViewData> previous,
+        List<PinnedFormulaManager.PinnedIngredientViewData> current
+    )
+    {
+        if (previous == null || current == null)
+        {
+            return previous == current;
+        }
+
+        if (previous.Count != current.Count)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < current.Count; i++)
+        {
+            var before = previous[i];
+            var after = current[i];
+
+            if (
+                before.ItemId != after.ItemId
+                || before.Name != after.Name
+                || before.CountText != after.CountText
+                || before.IsAvailable != after.IsAvailable
+                || before.IsBuyable != after.IsBuyable
+                || before.VendorName != after.VendorName
+                || before.VendorStock != after.VendorStock
+            )
             {
-                var oldIngredient = before.Ingredients[j];
-                var newIngredient = after.Ingredients[j];
-                if (
-                    oldIngredient.ItemId != newIngredient.ItemId
-                    || oldIngredient.Name != newIngredient.Name
-                    || oldIngredient.CountText != newIngredient.CountText
-                    || oldIngredient.IsAvailable != newIngredient.IsAvailable
-                    || oldIngredient.IsBuyable != newIngredient.IsBuyable
-                    || oldIngredient.VendorName != newIngredient.VendorName
-                    || oldIngredient.VendorStock != newIngredient.VendorStock
-                )
-                {
-                    return false;
-                }
+                return false;
             }
         }
 

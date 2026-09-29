@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using System.Reflection;
 using GK2LaboratoryFolioHelper.Helpers;
 using HarmonyLib;
@@ -22,16 +22,6 @@ internal static class AlchemyWindowPatch
     private static readonly FieldInfo DataField = AccessTools.Field(
         typeof(UIAlchemyWindow),
         "data"
-    );
-
-    private static readonly FieldInfo ActiveButtonsField = AccessTools.Field(
-        typeof(UIDialogWindow),
-        "activeButtons"
-    );
-
-    private static readonly PropertyInfo GamepadNavigationControllerProperty = AccessTools.Property(
-        typeof(UIDialogWindow),
-        "GamepadNavigationController"
     );
 
     private static void Postfix(UIAlchemyWindow __instance, AlchemyMixDef mix)
@@ -60,17 +50,7 @@ internal static class AlchemyWindowPatch
             ? null
             : GameBalance.GetAlchemyMixDef(mixCraftId);
 
-        // Vanilla hat bereits einen echten Mix.
-        // Dann nichts verändern.
         if (currentMix != null)
-        {
-            return;
-        }
-
-        List<PinnedFormulaManager.PinnedFormulaViewData> pins =
-            PinnedFormulaManager.GetPinnedRecipesForLaboratory();
-
-        if (pins == null || pins.Count == 0)
         {
             return;
         }
@@ -78,10 +58,9 @@ internal static class AlchemyWindowPatch
         result.DrawEmpty(drawAsNonInteractable: false);
 
         result.NoSelectionFrames = false;
-
         result.LazyButton.interactable = true;
 
-        result.OnItemCellPress = _ => OpenPinnedRecipePicker(__instance);
+        result.OnItemCellPress = _ => OpenAlchemyFolio(__instance, data);
 
         if (result.GamepadNavigationItem != null)
         {
@@ -93,162 +72,35 @@ internal static class AlchemyWindowPatch
                 result.OnGamepadPress
             );
         }
-
-        Plugin.Log.LogInfo($"Pinned recipe picker enabled | " + $"pins={pins.Count}");
     }
 
-    private static void OpenPinnedRecipePicker(UIAlchemyWindow alchemyWindow)
+    private static void OpenAlchemyFolio(
+        UIAlchemyWindow alchemyWindow,
+        UIAlchemyWindowData alchemyData
+    )
     {
-        List<PinnedFormulaManager.PinnedFormulaViewData> pins =
-            PinnedFormulaManager.GetPinnedRecipesForLaboratory();
-
-        if (pins == null || pins.Count == 0)
-        {
-            Plugin.Log.LogInfo("Pinned recipe picker opened without pins.");
-
-            return;
-        }
-
-        UIDialogWindow dialog = LazyUI.GetWindow<UIDialogWindow>();
-
-        if (dialog == null)
-        {
-            Plugin.Log.LogWarning("Could not obtain UIDialogWindow.");
-
-            return;
-        }
-
-        List<UIDialogWindowData.ButtonData> buttons = new();
-
-        foreach (PinnedFormulaManager.PinnedFormulaViewData pin in pins)
-        {
-            string formulaId = pin.FormulaId;
-
-            string formulaName = pin.Name;
-
-            buttons.Add(
-                new UIDialogWindowData.ButtonData(
-                    () =>
-                    {
-                        string mixId = PinnedFormulaManager.GetBestMixId(formulaId);
-
-                        if (string.IsNullOrEmpty(mixId))
-                        {
-                            Plugin.Log.LogWarning($"No best mix found for '{formulaId}'.");
-
-                            return;
-                        }
-
-                        dialog.Close();
-
-                        bool loaded = AlchemyRecipeLoader.LoadMix(alchemyWindow, mixId);
-
-                        Plugin.Log.LogInfo(
-                            $"Pinned recipe selected | "
-                                + $"formula='{formulaId}' | "
-                                + $"mix='{mixId}' | "
-                                + $"loaded={loaded}"
-                        );
-                    },
-                    formulaName,
-                    null,
-                    replaceForGamepad: false,
-                    keyToReplace: GameKey.Select
-                )
-            );
-        }
-
-        UIDialogWindowData dialogData = new UIDialogWindowData(
-            "Pinned Recipes",
-            "Select a recipe",
-            buttons[0]
-        );
-
-        dialogData.ButtonsData = buttons;
-
-        dialogData.ShowCloseButton = true;
-
-        dialogData.CloseButtonAction = dialog.Close;
-
-        PinnedRecipeDialogPatch.IsActive = true;
-
-        dialog.Open(dialogData);
-
-        BindDialogGamepadButtons(dialog);
-
-        PinnedRecipeDialogPatch.ShowTips(dialog);
-
-        Plugin.Log.LogInfo($"Opened pinned recipe picker | " + $"count={buttons.Count}");
-    }
-
-    private static void BindDialogGamepadButtons(UIDialogWindow dialog)
-    {
-        if (dialog == null || !LazyInput.IsGamepadActive)
+        if (alchemyWindow == null || alchemyData?.Wgo?.Data == null)
         {
             return;
         }
 
-        List<UIDialogWindowButton> activeButtons =
-            ActiveButtonsField?.GetValue(dialog) as List<UIDialogWindowButton>;
+        UIAlchemyFolioWindow folio = LazyUI.GetWindow<UIAlchemyFolioWindow>();
 
-        if (activeButtons == null || activeButtons.Count == 0)
+        if (folio == null)
         {
-            return;
-        }
-
-        GamepadNavigationController controller = GamepadNavigationHelper.GetController(dialog);
-
-        if (controller == null)
-        {
-            Plugin.Log.LogWarning("Pinned recipe picker: no gamepad controller.");
+            Plugin.Log.LogWarning("Could not obtain UIAlchemyFolioWindow.");
 
             return;
         }
 
-        GamepadNavigationItem first = null;
+        UIAlchemyFolioWindowData folioData = new UIAlchemyFolioWindowData();
 
-        foreach (UIDialogWindowButton dialogButton in activeButtons)
-        {
-            if (dialogButton == null || !dialogButton.gameObject.activeInHierarchy)
-            {
-                continue;
-            }
+        folioData.FillFromGaveSave(alchemyData.Wgo.Data);
 
-            LazyButton button = dialogButton.LazyButton;
+        AlchemyFolioSelectionContext.Begin(alchemyWindow);
 
-            if (button == null)
-            {
-                continue;
-            }
+        folio.Open(folioData);
 
-            GamepadNavigationItem nav = dialogButton.GetComponent<GamepadNavigationItem>();
-
-            if (nav == null)
-            {
-                nav = dialogButton.gameObject.AddComponent<GamepadNavigationItem>();
-            }
-
-            nav.enabled = true;
-            nav.Active = true;
-
-            GamepadNavigationHelper.Register(controller, nav, dialog.transform.lossyScale.x);
-
-            GamepadNavigationHelper.BindButtonPress(nav, button);
-
-            first ??= nav;
-        }
-
-        if (first == null)
-        {
-            Plugin.Log.LogWarning("Pinned recipe picker: no selectable recipe buttons.");
-
-            return;
-        }
-
-        controller.ReinitItems(focusOnFirstActive: false);
-
-        controller.SetFocusedItem(first);
-
-        Plugin.Log.LogInfo($"Pinned recipe gamepad bound | " + $"buttons={activeButtons.Count}");
+        Plugin.Log.LogDebug("Opened alchemy folio from laboratory.");
     }
 }

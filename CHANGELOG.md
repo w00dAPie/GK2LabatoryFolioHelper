@@ -2,6 +2,21 @@
 
 All notable changes to **GK2 Known Formula Helper** are documented here.
 
+## [0.2.0] - 2026-09-29
+
+- Added direct alchemy folio access from the laboratory result slot
+- Added direct recipe selection from the folio
+- Selected formulas now load the best matching mix into the laboratory
+- Best laboratory mix selection now considers current crafting resources
+- Connected storage is considered when choosing a craftable mix
+- Missing recipes are automatically pinned for ingredient tracking
+- Recipes with missing ingredients are still loaded into the laboratory
+- Added powder-free recipe alternatives
+- Improved ingredient availability handling
+- Preserved normal folio pin/unpin behavior
+- Removed the old custom pinned-recipe dialog
+- Improved gamepad handling for the folio-based workflow
+
 ## [0.1.0] - 2026-09-29
 
 ### Added

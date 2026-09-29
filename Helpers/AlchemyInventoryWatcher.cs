@@ -30,7 +30,7 @@ internal static class AlchemyInventoryWatcher
             inventory.OnItemsRemove += OnItemsChanged;
         }
 
-        Plugin.Log.LogInfo(
+        Plugin.Log.LogDebug(
             $"Alchemy inventory watcher attached | inventories={SubscribedInventories.Count}"
         );
     }
