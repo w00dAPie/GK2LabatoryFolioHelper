@@ -36,3 +36,5 @@ winhttp.dll
 
 publish.ps1
 .thunderstore-token
+
+*.png
