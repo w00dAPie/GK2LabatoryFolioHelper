@@ -42,6 +42,8 @@ public sealed class Plugin : BaseUnityPlugin
 
     private void OnDestroy()
     {
+        PinsInventoryWatcher.DetachAll();
+        AlchemyInventoryWatcher.Detach();
         ShoppingListCompatibilityPatch.Shutdown();
         LaboratoryPinsHud.Shutdown();
         _harmony?.UnpatchSelf();

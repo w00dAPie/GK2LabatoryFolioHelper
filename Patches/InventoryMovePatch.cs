@@ -30,7 +30,5 @@ internal static class InventoryMovePatch
         }
 
         LaboratoryPinsHud.Refresh();
-
-        Plugin.Log.LogInfo("Pins refreshed after completed player inventory transfer.");
     }
 }

@@ -402,7 +402,7 @@ internal static class LaboratoryPinsHud
             vendorRowLayout.childForceExpandWidth = true;
             vendorRowLayout.childForceExpandHeight = false;
 
-            TextMeshProUGUI vendorLabel = CreateText(
+            CreateText(
                 vendorRowObject.transform,
                 $"{ingredient.VendorName} ({ingredient.VendorStock})",
                 11f,

@@ -63,15 +63,6 @@ internal static class PinsInventoryWatcher
 
     private static void OnItemsChanged(List<Item> items)
     {
-        Plugin.Log.LogInfo(
-            $"Pins inventory changed | "
-                + $"items={items?.Count ?? 0} | "
-                + $"playerCount="
-                + MainGame.PlayerData.Inventory.Data.GetTotalCountInInventory(
-                    items != null && items.Count > 0 ? items[0].id : ""
-                )
-        );
-
         LaboratoryPinsHud.Refresh();
     }
 

@@ -56,7 +56,7 @@ internal static class PinnedFormulaManager
             pinned = true;
         }
 
-        LogFormulaInfo(formula, pinned);
+        Plugin.Log.LogInfo($"{(pinned ? "Pinned" : "Unpinned")} formula '{formula.id}'");
 
         PinsChanged?.Invoke();
 
@@ -227,7 +227,6 @@ internal static class PinnedFormulaManager
 
         int ownedItemCount = 0;
         int missingItemCount = 0;
-        int buyableMissingCount = 0;
         int unobtainableMissingCount = 0;
 
         List<MixIngredient> ingredients = new(requiredCounts.Count);
@@ -282,8 +281,6 @@ internal static class PinnedFormulaManager
 
             missingItemCount += availability.MissingCount;
 
-            buyableMissingCount += availability.BuyableCount;
-
             unobtainableMissingCount += availability.UnobtainableCount;
 
             ingredients.Add(
@@ -302,7 +299,6 @@ internal static class PinnedFormulaManager
             TotalIngredientCount = totalIngredientCount,
             OwnedItemCount = ownedItemCount,
             MissingItemCount = missingItemCount,
-            BuyableMissingCount = buyableMissingCount,
             UnobtainableMissingCount = unobtainableMissingCount,
             Ingredients = ingredients,
         };
@@ -379,43 +375,6 @@ internal static class PinnedFormulaManager
         return string.Join(" ", parts);
     }
 
-    private static void AddIngredient(ICollection<string> ingredients, string ingredientId)
-    {
-        if (!string.IsNullOrEmpty(ingredientId))
-        {
-            ingredients.Add(ingredientId);
-        }
-    }
-
-    private static void LogFormulaInfo(AlchemyFormulaDef formula, bool pinned)
-    {
-        Plugin.Log.LogInfo($"{(pinned ? "Pinned" : "Unpinned")} formula " + $"'{formula.id}'");
-
-        if (!pinned)
-        {
-            return;
-        }
-
-        MixCandidate best = GetBestCandidate(formula);
-
-        if (best == null)
-        {
-            Plugin.Log.LogInfo($"No known ingredient mix available for '{formula.id}'.");
-
-            return;
-        }
-
-        Plugin.Log.LogInfo(
-            $"BEST INVENTORY MIX | "
-                + $"formula='{formula.id}' | "
-                + $"count={best.TotalIngredientCount} | "
-                + $"owned={best.OwnedItemCount} | "
-                + $"missing={best.MissingItemCount} | "
-                + $"craftable={best.IsCraftable} | "
-                + $"mixId={best.MixId}"
-        );
-    }
-
     private static List<PinnedIngredientViewData> BuildIngredientViewData(MixCandidate candidate)
     {
         List<PinnedIngredientViewData> result = new(candidate.Ingredients.Count);
@@ -462,7 +421,6 @@ internal static class PinnedFormulaManager
                         availability.State == IngredientAvailability.AvailabilityState.Owned,
                     IsBuyable = availability.BuyableCount > 0,
                     VendorStock = availability.VendorStock,
-                    VendorId = availability.VendorId,
                     VendorName = GetVendorDisplayName(availability.VendorId),
                 }
             );
@@ -537,8 +495,6 @@ internal static class PinnedFormulaManager
 
         public int VendorStock { get; set; }
 
-        public string VendorId { get; set; }
-
         public string VendorName { get; set; }
     }
 
@@ -551,8 +507,6 @@ internal static class PinnedFormulaManager
         public int OwnedItemCount { get; set; }
 
         public int MissingItemCount { get; set; }
-
-        public int BuyableMissingCount { get; set; }
 
         public int UnobtainableMissingCount { get; set; }
 
