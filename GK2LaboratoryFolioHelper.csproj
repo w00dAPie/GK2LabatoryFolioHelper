@@ -5,7 +5,7 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
 
-    <AssemblyName>GK2LaboratoryFolioHelper</AssemblyName>
+    <AssemblyName>GK2KnownFormulaHelper</AssemblyName>
     <RootNamespace>GK2LaboratoryFolioHelper</RootNamespace>
 
     <Version>0.1.0</Version>
