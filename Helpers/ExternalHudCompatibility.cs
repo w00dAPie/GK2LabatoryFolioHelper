@@ -117,29 +117,77 @@ internal static class ExternalHudCompatibility
             : null;
     }
 
+    internal static bool TryGetRecipePinScreenRect(out Rect screenRect)
+    {
+        screenRect = default;
+        try
+        {
+            EnsureRecipePin();
+            if (recipePinRecipesField?.GetValue(recipePinInstance) is not IList recipes)
+            {
+                return false;
+            }
+
+            foreach (object recipe in recipes)
+            {
+                RectTransform root =
+                    recipe == null ? null : recipePinRootField?.GetValue(recipe) as RectTransform;
+                if (!TryGetScreenRect(root, out Rect bounds) || bounds.width <= screenRect.width)
+                {
+                    continue;
+                }
+
+                screenRect = bounds;
+            }
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogWarning($"Could not read RecipePin card layout: {ex.Message}");
+        }
+
+        return screenRect.width > 0f;
+    }
+
     private static void IncludeBottom(RectTransform root, ref float bottomScreenY, ref bool found)
     {
+        if (TryGetScreenRect(root, out Rect screenRect))
+        {
+            bottomScreenY = Mathf.Min(bottomScreenY, screenRect.yMin);
+            found = true;
+        }
+    }
+
+    private static bool TryGetScreenRect(RectTransform root, out Rect screenRect)
+    {
+        screenRect = default;
         if (!IsVisible(root) || root.rect.width <= 0f || root.rect.height <= 0f)
         {
-            return;
+            return false;
         }
 
         Camera camera = GetCanvasCamera(root);
         root.GetWorldCorners(Corners);
-        float bottom = float.MaxValue;
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+        Vector2 max = new Vector2(float.MinValue, float.MinValue);
         foreach (Vector3 corner in Corners)
         {
-            float y = RectTransformUtility.WorldToScreenPoint(camera, corner).y;
-            if (float.IsNaN(y) || float.IsInfinity(y))
+            Vector2 point = RectTransformUtility.WorldToScreenPoint(camera, corner);
+            if (
+                float.IsNaN(point.x)
+                || float.IsInfinity(point.x)
+                || float.IsNaN(point.y)
+                || float.IsInfinity(point.y)
+            )
             {
-                return;
+                return false;
             }
 
-            bottom = Mathf.Min(bottom, y);
+            min = Vector2.Min(min, point);
+            max = Vector2.Max(max, point);
         }
 
-        bottomScreenY = Mathf.Min(bottomScreenY, bottom);
-        found = true;
+        screenRect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+        return screenRect.width > 0f && screenRect.height > 0f;
     }
 
     private static bool IsVisible(RectTransform root)

@@ -6,6 +6,7 @@ A BepInEx mod for **Graveyard Keeper 2** that improves the alchemy folio and lab
 
 - Pin up to **4 known alchemy formulas** from the folio.
 - Shows pinned formulas directly on the HUD.
+- Keeps the same HUD card size with or without other recipe pins.
 - Automatically selects the best known ingredient mix for each formula.
 - Displays:
   - recipe status: **Ready** / **Missing**
@@ -72,17 +73,68 @@ The DLL is created at:
 bin/Release/net472/GK2LaboratoryFolioHelper.dll
 ```
 
+### Build and install locally
+
+The `publish.ps1` workflow is adapted from GK2 Rusty Tool Disposal. It resolves
+`GameDir` from MSBuild, formats and builds the project, checks the version, and
+verifies the installed DLL with SHA256. Existing DLLs are backed up under
+`artifacts/install-backups/`.
+
+```powershell
+.\publish.ps1 -InstallLocal -SkipPackages
+```
+
+Use `-SkipPackages` without `-InstallLocal` to build only. These commands do not upload anything.
+Restart the game after installing to load the new DLL.
+If the running game keeps the old DLL locked, installation may leave a
+`.dll.previous-*` file next to it. It is not loaded as a plugin and can be removed
+after closing the game.
+
+### Release packages and upload
+
+With a valid `manifest.json` and `icon.png`, create Thunderstore and Nexus ZIPs
+under `dist/thunderstore/` and `dist/nexus/`:
+
+```powershell
+.\publish.ps1 -NoPublish
+```
+
+An upload is only performed with `-Publish`. It additionally requires this mod's
+`thunderstore.toml`, the `tcli` tool and a local `.thunderstore-token` file (ignored
+by Git). The TOML must package `bin/Release/net472/GK2LaboratoryFolioHelper.dll`.
+The script synchronizes its `versionNumber` with the project version; the manifest
+and `Plugin.PluginVersion` must also match. Nexus uploads remain manual.
+
 ## Compatibility
 
 Optional mod integrations are detected dynamically at runtime and are not hard compile-time dependencies.
 
+## Credits and inspiration
+
+A big thank you to the authors of **Pin My Recipe** and **GK2 Shopping List**.
+
+Both mods provided great ideas for presenting pinned recipes, ingredient information, and compact HUD elements in a clear and useful way.
+
+The Laboratory Folio Helper is an independent implementation, but its HUD design and usability were strongly inspired by ideas found in these mods.
+
+Special thanks for the inspiration around:
+
+- compact pinned recipe layouts
+- readable ingredient presentation
+- HUD positioning and usability
+- keeping useful information visible without opening additional windows
+
+Compatibility with **Pin My Recipe** and **GK2 Shopping List** is optional and handled dynamically at runtime.
+
 ### Pin My Recipe
 
-The Laboratory HUD reacts to recipe pin changes and can reposition itself to avoid overlap.
+The Laboratory HUD reacts to recipe pin changes and repositions itself to avoid overlapping the Pin My Recipe HUD.
+
+When Pin My Recipe is detected, Laboratory Folio Helper can use a reduced alchemy pin limit to keep the combined HUD layout compact.
 
 ### GK2 Shopping List
 
-The Laboratory HUD can account for the Shopping List HUD when positioning pinned alchemy recipes.
+The Laboratory HUD detects the visible Shopping List panel and positions its alchemy pins below compatible HUD elements when necessary.
 
 ## Development notes
 

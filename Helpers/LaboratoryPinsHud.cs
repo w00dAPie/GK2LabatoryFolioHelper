@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
+using LazyBearTechnology;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,12 +25,17 @@ internal static class LaboratoryPinsHud
 
     private static TMP_FontAsset font;
     private static Material fontMaterial;
+    private static TMP_SpriteAsset spriteAsset;
 
     private const float ExternalSpacingPixels = 12f;
+    private const float DefaultCardWidth = 310f;
+    private const float CardScale = 0.8f;
+    private static readonly Color CardColor = new Color(0.14f, 0.15f, 0.18f, 0.96f);
     private static readonly Vector2 DefaultPosition = new Vector2(-16f, -85f);
     private static bool layoutUpdateQueued;
     private static bool refreshPending;
     private static bool updatingPosition;
+    private static List<PinnedFormulaManager.PinnedFormulaViewData> renderedPins;
 
     public static void Initialize(HUD hud)
     {
@@ -55,11 +61,18 @@ internal static class LaboratoryPinsHud
         {
             font = sourceLabel.font;
             fontMaterial = sourceLabel.fontSharedMaterial;
+            spriteAsset = sourceLabel.spriteAsset;
         }
 
-        panelObject = new GameObject("GK2LaboratoryPins", typeof(RectTransform));
+        panelObject = new GameObject(
+            "GK2LaboratoryPins",
+            typeof(RectTransform),
+            typeof(LayoutElement)
+        );
 
-        panelObject.transform.SetParent(rightUpGroup.transform, false);
+        // The game owns the parent layout; this panel owns its own position and size.
+        panelObject.GetComponent<LayoutElement>().ignoreLayout = true;
+        AttachToHud(panelObject, rightUpGroup.transform);
 
         RectTransform panelRect = panelObject.GetComponent<RectTransform>();
 
@@ -69,17 +82,24 @@ internal static class LaboratoryPinsHud
 
         panelRect.anchoredPosition = DefaultPosition;
 
-        panelRect.sizeDelta = new Vector2(540f, 430f);
+        panelRect.sizeDelta = new Vector2(DefaultCardWidth, 0f);
+        // Keep the same size with zero, one or several external recipe pins.
+        panelRect.localScale = new Vector3(CardScale, CardScale, 1f);
 
-        LaboratoryPinsLayoutListener.Observe(panelRect);
+        // Observe the anchor, not our own rect: our writes must not enqueue themselves.
+        if (rightUpGroup.transform is RectTransform anchor)
+        {
+            LaboratoryPinsLayoutListener.Observe(anchor);
+        }
 
         GameObject contentObject = new GameObject(
             "Content",
             typeof(RectTransform),
-            typeof(VerticalLayoutGroup)
+            typeof(VerticalLayoutGroup),
+            typeof(ContentSizeFitter)
         );
 
-        contentObject.transform.SetParent(panelObject.transform, false);
+        AttachToHud(contentObject, panelObject.transform);
 
         contentRoot = contentObject.GetComponent<RectTransform>();
 
@@ -91,13 +111,16 @@ internal static class LaboratoryPinsHud
 
         contentRoot.anchoredPosition = Vector2.zero;
 
-        contentRoot.sizeDelta = new Vector2(0f, 430f);
+        contentRoot.sizeDelta = Vector2.zero;
+        contentObject.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
+            .FitMode
+            .PreferredSize;
 
         VerticalLayoutGroup layout = contentObject.GetComponent<VerticalLayoutGroup>();
 
         layout.padding = new RectOffset(0, 0, 0, 0);
 
-        layout.spacing = 7f;
+        layout.spacing = 6f;
 
         layout.childAlignment = TextAnchor.UpperLeft;
 
@@ -126,27 +149,50 @@ internal static class LaboratoryPinsHud
 
         UpdatePosition();
 
-        ClearChildren(contentRoot);
-
         List<PinnedFormulaManager.PinnedFormulaViewData> pins =
             PinnedFormulaManager.GetPinnedViewData();
 
-        panelObject.SetActive(pins.Count > 0);
+        if (HaveSameContent(renderedPins, pins))
+        {
+            return;
+        }
+
+        ClearChildren(contentRoot);
 
         foreach (PinnedFormulaManager.PinnedFormulaViewData pin in pins)
         {
             CreateFormulaBlock(pin);
         }
+
+        renderedPins = pins;
+        if (panelObject.activeSelf != (pins.Count > 0))
+        {
+            panelObject.SetActive(pins.Count > 0);
+        }
+
+        if (pins.Count > 0)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
+        }
     }
 
     internal static void RequestRefresh()
     {
-        if (panelObject == null)
+        if (panelObject == null || refreshPending)
         {
             return;
         }
 
         refreshPending = true;
+        // Build graphics before the canvas layout/graphic rebuild, never after it.
+        Canvas.preWillRenderCanvases += BeforeLayout;
+    }
+
+    private static void BeforeLayout()
+    {
+        Canvas.preWillRenderCanvases -= BeforeLayout;
+        refreshPending = false;
+        Refresh();
         RequestPositionUpdate();
     }
 
@@ -167,17 +213,7 @@ internal static class LaboratoryPinsHud
     {
         Canvas.willRenderCanvases -= AfterLayout;
         layoutUpdateQueued = false;
-        bool refresh = refreshPending;
-        refreshPending = false;
-
-        if (refresh)
-        {
-            Refresh();
-        }
-        else
-        {
-            UpdatePosition();
-        }
+        UpdatePosition();
     }
 
     internal static void Shutdown()
@@ -191,63 +227,110 @@ internal static class LaboratoryPinsHud
         GameObject blockObject = new GameObject(
             $"Pin_{pin.FormulaId}",
             typeof(RectTransform),
+            typeof(Image),
+            typeof(HorizontalLayoutGroup)
+        );
+        AttachToHud(blockObject, contentRoot);
+
+        Image background = blockObject.GetComponent<Image>();
+        // Same flat card color as RecipePin's CreateCompactVisual.
+        background.color = CardColor;
+        background.raycastTarget = false;
+
+        HorizontalLayoutGroup blockLayout = blockObject.GetComponent<HorizontalLayoutGroup>();
+        blockLayout.padding = new RectOffset(6, 6, 4, 4);
+        blockLayout.spacing = 8f;
+        blockLayout.childAlignment = TextAnchor.UpperLeft;
+        blockLayout.childControlWidth = true;
+        blockLayout.childControlHeight = true;
+        blockLayout.childForceExpandWidth = false;
+        blockLayout.childForceExpandHeight = false;
+
+        GameObject header = new GameObject(
+            "Header",
+            typeof(RectTransform),
+            typeof(HorizontalLayoutGroup),
+            typeof(LayoutElement)
+        );
+        AttachToHud(header, blockObject.transform);
+        LayoutElement headerSize = header.GetComponent<LayoutElement>();
+        headerSize.minWidth = 108f;
+        headerSize.preferredWidth = 108f;
+        // Otherwise the nested title's flexible width also makes Header expand.
+        headerSize.flexibleWidth = 0f;
+        headerSize.minHeight = 30f;
+        HorizontalLayoutGroup headerLayout = header.GetComponent<HorizontalLayoutGroup>();
+        headerLayout.spacing = 7f;
+        headerLayout.childAlignment = TextAnchor.MiddleLeft;
+        headerLayout.childControlWidth = true;
+        headerLayout.childControlHeight = true;
+        headerLayout.childForceExpandWidth = false;
+        headerLayout.childForceExpandHeight = false;
+
+        AlchemyFormulaDef formula = GameBalance.Me.GetDataOrNull<AlchemyFormulaDef>(pin.FormulaId);
+        CreateItemIcon(header.transform, formula?.ItemDef, 30f, true);
+
+        GameObject titleGroup = new GameObject(
+            "TitleAndStatus",
+            typeof(RectTransform),
             typeof(VerticalLayoutGroup),
             typeof(LayoutElement)
         );
-
-        blockObject.transform.SetParent(contentRoot, false);
-
-        VerticalLayoutGroup blockLayout = blockObject.GetComponent<VerticalLayoutGroup>();
-
-        blockLayout.spacing = 0f;
-
-        blockLayout.childAlignment = TextAnchor.UpperLeft;
-
-        blockLayout.childControlWidth = true;
-        blockLayout.childControlHeight = true;
-
-        blockLayout.childForceExpandWidth = true;
-        blockLayout.childForceExpandHeight = false;
+        AttachToHud(titleGroup, header.transform);
+        LayoutElement titleSize = titleGroup.GetComponent<LayoutElement>();
+        titleSize.minWidth = 0f;
+        titleSize.preferredWidth = 0f;
+        titleSize.flexibleWidth = 1f;
+        VerticalLayoutGroup titleLayout = titleGroup.GetComponent<VerticalLayoutGroup>();
+        titleLayout.childControlWidth = true;
+        titleLayout.childControlHeight = true;
+        titleLayout.childForceExpandWidth = true;
+        titleLayout.childForceExpandHeight = false;
+        titleLayout.childAlignment = TextAnchor.MiddleLeft;
 
         CreateText(
-            blockObject.transform,
+            titleGroup.transform,
             pin.Name,
-            15f,
-            19f,
+            16f,
+            21f,
             TextAlignmentOptions.Left,
-            Color.white
+            Color.white,
+            wrap: true
         );
-
-        Color statusColor = pin.IsCraftable ? new Color(0.50f, 0.84f, 0.42f) : Color.white;
-
         CreateText(
-            blockObject.transform,
+            titleGroup.transform,
             pin.StatusText,
             13f,
-            17f,
+            16f,
             TextAlignmentOptions.Left,
-            statusColor
+            pin.IsCraftable ? new Color(0.50f, 0.84f, 0.42f) : Color.white,
+            wrap: true
         );
 
+        GameObject ingredients = new GameObject(
+            "Ingredients",
+            typeof(RectTransform),
+            typeof(VerticalLayoutGroup),
+            typeof(LayoutElement)
+        );
+        AttachToHud(ingredients, blockObject.transform);
+        LayoutElement ingredientSize = ingredients.GetComponent<LayoutElement>();
+        ingredientSize.minWidth = 0f;
+        ingredientSize.preferredWidth = 0f;
+        ingredientSize.flexibleWidth = 1f;
+        VerticalLayoutGroup ingredientLayout = ingredients.GetComponent<VerticalLayoutGroup>();
+        // Separate complete ingredients, keeping each vendor attached to its own row.
+        ingredientLayout.spacing = 3f;
+        ingredientLayout.childAlignment = TextAnchor.MiddleLeft;
+        ingredientLayout.childControlWidth = true;
+        ingredientLayout.childControlHeight = true;
+        ingredientLayout.childForceExpandWidth = true;
+        ingredientLayout.childForceExpandHeight = false;
+
         foreach (PinnedFormulaManager.PinnedIngredientViewData ingredient in pin.Ingredients)
         {
-            CreateIngredientRow(blockObject.transform, ingredient);
+            CreateIngredientRow(ingredients.transform, ingredient);
         }
-
-        float ingredientsHeight = 0f;
-
-        foreach (PinnedFormulaManager.PinnedIngredientViewData ingredient in pin.Ingredients)
-        {
-            ingredientsHeight +=
-                ingredient.IsBuyable && !string.IsNullOrEmpty(ingredient.VendorName) ? 33f : 18f;
-        }
-
-        float blockHeight = 19f + 17f + ingredientsHeight + 2f;
-
-        LayoutElement blockElement = blockObject.GetComponent<LayoutElement>();
-
-        blockElement.minHeight = blockHeight;
-        blockElement.preferredHeight = blockHeight;
     }
 
     private static void CreateIngredientRow(
@@ -255,162 +338,124 @@ internal static class LaboratoryPinsHud
         PinnedFormulaManager.PinnedIngredientViewData ingredient
     )
     {
-        bool showVendor = ingredient.IsBuyable && !string.IsNullOrEmpty(ingredient.VendorName);
+        Color color =
+            ingredient.IsAvailable ? new Color(0.50f, 0.84f, 0.42f)
+            : ingredient.IsBuyable ? new Color(0.45f, 0.72f, 0.95f)
+            : new Color(0.91f, 0.70f, 0.42f);
 
-        float rowHeight = showVendor ? 33f : 18f;
-
-        GameObject containerObject = new GameObject(
+        GameObject ingredientBlock = new GameObject(
             $"Ingredient_{ingredient.ItemId}",
             typeof(RectTransform),
-            typeof(VerticalLayoutGroup),
-            typeof(LayoutElement)
+            typeof(VerticalLayoutGroup)
         );
+        AttachToHud(ingredientBlock, parent);
+        VerticalLayoutGroup ingredientLayout = ingredientBlock.GetComponent<VerticalLayoutGroup>();
+        ingredientLayout.childAlignment = TextAnchor.UpperLeft;
+        ingredientLayout.childControlWidth = true;
+        ingredientLayout.childControlHeight = true;
+        ingredientLayout.childForceExpandWidth = true;
+        ingredientLayout.childForceExpandHeight = false;
 
-        containerObject.transform.SetParent(parent, false);
-
-        LayoutElement containerElement = containerObject.GetComponent<LayoutElement>();
-
-        containerElement.minHeight = rowHeight;
-
-        containerElement.preferredHeight = rowHeight;
-
-        VerticalLayoutGroup containerLayout = containerObject.GetComponent<VerticalLayoutGroup>();
-
-        containerLayout.spacing = 0f;
-
-        containerLayout.padding = new RectOffset(0, 0, 0, 0);
-
-        containerLayout.childAlignment = TextAnchor.UpperLeft;
-
-        containerLayout.childControlWidth = true;
-
-        containerLayout.childControlHeight = true;
-
-        containerLayout.childForceExpandWidth = true;
-
-        containerLayout.childForceExpandHeight = false;
-
-        GameObject rowObject = new GameObject(
-            "IngredientRow",
+        GameObject row = new GameObject(
+            "NameAndCount",
             typeof(RectTransform),
             typeof(HorizontalLayoutGroup),
             typeof(LayoutElement)
         );
+        AttachToHud(row, ingredientBlock.transform);
+        // Let wrapped names (including rune sprites) determine the row height.
+        row.GetComponent<LayoutElement>().minHeight = 18f;
+        HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
+        layout.spacing = 5f;
+        layout.childAlignment = TextAnchor.UpperLeft;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
 
-        rowObject.transform.SetParent(containerObject.transform, false);
-
-        LayoutElement rowElement = rowObject.GetComponent<LayoutElement>();
-
-        rowElement.minHeight = 18f;
-        rowElement.preferredHeight = 18f;
-
-        HorizontalLayoutGroup rowLayout = rowObject.GetComponent<HorizontalLayoutGroup>();
-
-        rowLayout.spacing = 6f;
-
-        rowLayout.padding = new RectOffset(10, 0, 0, 0);
-
-        rowLayout.childAlignment = TextAnchor.MiddleLeft;
-
-        rowLayout.childControlWidth = true;
-        rowLayout.childControlHeight = true;
-
-        rowLayout.childForceExpandWidth = false;
-        rowLayout.childForceExpandHeight = false;
-
-        Color ingredientColor;
-
-        if (ingredient.IsAvailable)
-        {
-            ingredientColor = new Color(0.50f, 0.84f, 0.42f);
-        }
-        else if (ingredient.IsBuyable)
-        {
-            ingredientColor = new Color(0.45f, 0.72f, 0.95f);
-        }
-        else
-        {
-            ingredientColor = new Color(0.91f, 0.70f, 0.42f);
-        }
-
-        TextMeshProUGUI nameLabel = CreateText(
-            rowObject.transform,
+        ItemDef item = GameBalance.Me.GetDataOrNull<ItemDef>(ingredient.ItemId);
+        CreateItemIcon(row.transform, item, 16f, false);
+        TextMeshProUGUI name = CreateText(
+            row.transform,
             ingredient.Name,
             13f,
             18f,
             TextAlignmentOptions.Left,
-            ingredientColor
+            color,
+            wrap: true
         );
-
-        LayoutElement nameLayout = nameLabel.GetComponent<LayoutElement>();
-
+        LayoutElement nameLayout = name.GetComponent<LayoutElement>();
         nameLayout.minWidth = 0f;
         nameLayout.preferredWidth = 0f;
         nameLayout.flexibleWidth = 1f;
 
-        nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
-
-        nameLabel.overflowMode = TextOverflowModes.Overflow;
-
-        TextMeshProUGUI countLabel = CreateText(
-            rowObject.transform,
+        TextMeshProUGUI count = CreateText(
+            row.transform,
             ingredient.CountText,
             13f,
             18f,
             TextAlignmentOptions.Right,
-            ingredientColor
+            color
         );
-
-        LayoutElement countLayout = countLabel.GetComponent<LayoutElement>();
-
-        countLayout.minWidth = 35f;
-        countLayout.preferredWidth = 35f;
+        LayoutElement countLayout = count.GetComponent<LayoutElement>();
+        float countWidth = Mathf.Max(
+            32f,
+            Mathf.Ceil(count.GetPreferredValues(ingredient.CountText).x)
+        );
+        countLayout.minWidth = countWidth;
+        countLayout.preferredWidth = countWidth;
         countLayout.flexibleWidth = 0f;
 
-        countLabel.textWrappingMode = TextWrappingModes.NoWrap;
-
-        countLabel.overflowMode = TextOverflowModes.Overflow;
-
-        if (showVendor)
+        if (ingredient.IsBuyable && !string.IsNullOrEmpty(ingredient.VendorName))
         {
-            GameObject vendorRowObject = new GameObject(
-                "VendorRow",
-                typeof(RectTransform),
-                typeof(HorizontalLayoutGroup),
-                typeof(LayoutElement)
-            );
-
-            vendorRowObject.transform.SetParent(containerObject.transform, false);
-
-            LayoutElement vendorRowElement = vendorRowObject.GetComponent<LayoutElement>();
-
-            vendorRowElement.minHeight = 15f;
-            vendorRowElement.preferredHeight = 15f;
-
-            HorizontalLayoutGroup vendorRowLayout =
-                vendorRowObject.GetComponent<HorizontalLayoutGroup>();
-
-            vendorRowLayout.padding = new RectOffset(28, 0, 0, 0);
-
-            vendorRowLayout.spacing = 0f;
-
-            vendorRowLayout.childAlignment = TextAnchor.MiddleLeft;
-
-            vendorRowLayout.childControlWidth = true;
-            vendorRowLayout.childControlHeight = true;
-
-            vendorRowLayout.childForceExpandWidth = true;
-            vendorRowLayout.childForceExpandHeight = false;
-
-            CreateText(
-                vendorRowObject.transform,
+            TextMeshProUGUI vendor = CreateText(
+                ingredientBlock.transform,
                 $"{ingredient.VendorName} ({ingredient.VendorStock})",
-                11f,
+                12f,
                 15f,
                 TextAlignmentOptions.Left,
-                ingredientColor
+                color,
+                wrap: true
             );
+            vendor.margin = new Vector4(21f, 0f, 0f, 0f);
         }
+    }
+
+    private static void CreateItemIcon(Transform parent, ItemDef item, float side, bool framed)
+    {
+        GameObject slot = new GameObject("ItemIcon", typeof(RectTransform), typeof(LayoutElement));
+        AttachToHud(slot, parent);
+        LayoutElement layout = slot.GetComponent<LayoutElement>();
+        layout.minWidth = side;
+        layout.preferredWidth = side;
+        layout.minHeight = side;
+        layout.preferredHeight = side;
+
+        if (framed)
+        {
+            Image background = slot.AddComponent<Image>();
+            background.color = new Color(0.22f, 0.23f, 0.28f);
+            background.raycastTarget = false;
+        }
+
+        GameObject iconObject = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+        AttachToHud(iconObject, slot.transform);
+        RectTransform rect = iconObject.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        float inset = framed ? 3f : 0f;
+        rect.offsetMin = new Vector2(inset, inset);
+        rect.offsetMax = new Vector2(-inset, -inset);
+
+        Image icon = iconObject.GetComponent<Image>();
+        // Use the same sprite collection as UIItemCell.Draw; no interactive cell is cloned.
+        icon.sprite =
+            item == null
+                ? null
+                : LazySingletonSO<EasySpritesCollection>.Instance.GetSprite(item.iconId);
+        icon.preserveAspect = true;
+        icon.raycastTarget = false;
+        icon.enabled = icon.sprite != null;
     }
 
     private static TextMeshProUGUI CreateText(
@@ -419,7 +464,8 @@ internal static class LaboratoryPinsHud
         float fontSize,
         float height,
         TextAlignmentOptions alignment,
-        Color color
+        Color color,
+        bool wrap = false
     )
     {
         GameObject textObject = new GameObject(
@@ -429,12 +475,12 @@ internal static class LaboratoryPinsHud
             typeof(LayoutElement)
         );
 
-        textObject.transform.SetParent(parent, false);
+        AttachToHud(textObject, parent);
 
         LayoutElement layout = textObject.GetComponent<LayoutElement>();
 
         layout.minHeight = height;
-        layout.preferredHeight = height;
+        layout.preferredHeight = wrap ? -1f : height;
 
         TextMeshProUGUI label = textObject.GetComponent<TextMeshProUGUI>();
 
@@ -455,8 +501,10 @@ internal static class LaboratoryPinsHud
 
         label.richText = true;
         label.raycastTarget = false;
+        label.spriteAsset = spriteAsset;
 
-        label.textWrappingMode = TextWrappingModes.NoWrap;
+        label.textWrappingMode = wrap ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+        label.overflowMode = wrap ? TextOverflowModes.Overflow : TextOverflowModes.Ellipsis;
 
         return label;
     }
@@ -471,8 +519,64 @@ internal static class LaboratoryPinsHud
         }
     }
 
+    private static void AttachToHud(GameObject child, Transform parent)
+    {
+        // SetParent does not inherit layers. Default-layer graphics in a WorldSpace
+        // canvas can be picked up by the game's world-camera passes.
+        child.layer = parent.gameObject.layer;
+        child.transform.SetParent(parent, false);
+    }
+
+    private static bool HaveSameContent(
+        List<PinnedFormulaManager.PinnedFormulaViewData> previous,
+        List<PinnedFormulaManager.PinnedFormulaViewData> current
+    )
+    {
+        if (previous == null || previous.Count != current.Count)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < current.Count; i++)
+        {
+            var before = previous[i];
+            var after = current[i];
+            if (
+                before.FormulaId != after.FormulaId
+                || before.Name != after.Name
+                || before.StatusText != after.StatusText
+                || before.IsCraftable != after.IsCraftable
+                || before.Ingredients.Count != after.Ingredients.Count
+            )
+            {
+                return false;
+            }
+
+            for (int j = 0; j < after.Ingredients.Count; j++)
+            {
+                var oldIngredient = before.Ingredients[j];
+                var newIngredient = after.Ingredients[j];
+                if (
+                    oldIngredient.ItemId != newIngredient.ItemId
+                    || oldIngredient.Name != newIngredient.Name
+                    || oldIngredient.CountText != newIngredient.CountText
+                    || oldIngredient.IsAvailable != newIngredient.IsAvailable
+                    || oldIngredient.IsBuyable != newIngredient.IsBuyable
+                    || oldIngredient.VendorName != newIngredient.VendorName
+                    || oldIngredient.VendorStock != newIngredient.VendorStock
+                )
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     private static void DestroyExisting()
     {
+        Canvas.preWillRenderCanvases -= BeforeLayout;
         Canvas.willRenderCanvases -= AfterLayout;
         layoutUpdateQueued = false;
         refreshPending = false;
@@ -485,24 +589,22 @@ internal static class LaboratoryPinsHud
 
         panelObject = null;
         contentRoot = null;
+        renderedPins = null;
+        font = null;
+        fontMaterial = null;
+        spriteAsset = null;
     }
 
     private static void UpdatePosition()
     {
-        if (panelObject == null)
+        if (panelObject == null || updatingPosition)
         {
             return;
         }
 
         RectTransform panelRect = panelObject.GetComponent<RectTransform>();
-
-        if (panelRect == null)
-        {
-            return;
-        }
-
         RectTransform parentRect = panelRect.parent as RectTransform;
-        if (parentRect == null || updatingPosition)
+        if (parentRect == null)
         {
             return;
         }
@@ -510,34 +612,48 @@ internal static class LaboratoryPinsHud
         updatingPosition = true;
         try
         {
-            panelRect.anchoredPosition = DefaultPosition;
-            if (!ExternalHudCompatibility.TryGetExternalBottomScreenY(out float bottomScreenY))
+            // Calculate first. Do not briefly reset the live rect to the fallback:
+            // those intermediate writes invalidate layout and trigger dimension callbacks.
+            Vector2 targetPosition = DefaultPosition;
+
+            if (ExternalHudCompatibility.TryGetExternalBottomScreenY(out float bottomScreenY))
             {
-                return;
+                Camera camera = ExternalHudCompatibility.GetCanvasCamera(parentRect);
+                Vector3 defaultLocalPoint = new Vector3(
+                    parentRect.rect.xMax + DefaultPosition.x,
+                    parentRect.rect.yMax + DefaultPosition.y,
+                    panelRect.localPosition.z
+                );
+                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
+                    camera,
+                    parentRect.TransformPoint(defaultLocalPoint)
+                );
+                screenPoint.y = bottomScreenY - ExternalSpacingPixels;
+
+                if (ExternalHudCompatibility.TryGetRecipePinScreenRect(out Rect recipeBounds))
+                {
+                    screenPoint.x = recipeBounds.xMax;
+                }
+
+                if (
+                    RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                        parentRect,
+                        screenPoint,
+                        camera,
+                        out Vector2 localPoint
+                    )
+                )
+                {
+                    targetPosition = new Vector2(
+                        localPoint.x - parentRect.rect.xMax,
+                        localPoint.y - parentRect.rect.yMax
+                    );
+                }
             }
 
-            Camera camera = ExternalHudCompatibility.GetCanvasCamera(parentRect);
-            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
-                camera,
-                panelRect.position
-            );
-            screenPoint.y = bottomScreenY - ExternalSpacingPixels;
-
-            if (
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    parentRect,
-                    screenPoint,
-                    camera,
-                    out Vector2 localPoint
-                )
-            )
+            if (panelRect.anchoredPosition != targetPosition)
             {
-                // ScreenPointToLocalPoint returns parent-pivot coordinates.
-                // anchoredPosition is relative to the panel's top-right anchor.
-                panelRect.anchoredPosition = new Vector2(
-                    DefaultPosition.x,
-                    localPoint.y - parentRect.rect.yMax
-                );
+                panelRect.anchoredPosition = targetPosition;
             }
         }
         finally
