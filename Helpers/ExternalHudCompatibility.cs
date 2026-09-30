@@ -27,7 +27,7 @@ internal static class ExternalHudCompatibility
     private static FieldInfo shoppingListHudField;
     private static FieldInfo shoppingListHudRootField;
 
-    public static bool TryGetExternalBottomScreenY(out float bottomScreenY)
+    public static bool TryGetExternalBottomScreenY(float left, float right, out float bottomScreenY)
     {
         bottomScreenY = float.MaxValue;
         bool found = false;
@@ -94,6 +94,8 @@ internal static class ExternalHudCompatibility
             Plugin.Log.LogWarning($"Could not read Shopping List HUD: {ex.Message}");
         }
 
+        AdditionalRecipePinHuds.IncludeBottom(left, right, ref bottomScreenY, ref found);
+        HudPositionPreview.IncludeBottom(left, right, ref bottomScreenY, ref found);
         return found;
     }
 
@@ -157,7 +159,7 @@ internal static class ExternalHudCompatibility
         }
     }
 
-    private static bool TryGetScreenRect(RectTransform root, out Rect screenRect)
+    internal static bool TryGetScreenRect(RectTransform root, out Rect screenRect)
     {
         screenRect = default;
         if (!IsVisible(root) || root.rect.width <= 0f || root.rect.height <= 0f)
@@ -188,6 +190,21 @@ internal static class ExternalHudCompatibility
 
         screenRect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
         return screenRect.width > 0f && screenRect.height > 0f;
+    }
+
+    internal static void IncludeOverlappingBottom(
+        RectTransform root,
+        float left,
+        float right,
+        ref float bottom,
+        ref bool found
+    )
+    {
+        if (TryGetScreenRect(root, out Rect bounds) && bounds.xMax > left && bounds.xMin < right)
+        {
+            bottom = Mathf.Min(bottom, bounds.yMin);
+            found = true;
+        }
     }
 
     private static bool IsVisible(RectTransform root)

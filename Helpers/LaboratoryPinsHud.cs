@@ -135,6 +135,8 @@ internal static class LaboratoryPinsHud
 
         PinsInventoryWatcher.Initialize();
 
+        HudPositionPreview.Attach(rightUpGroup, sourceLabel);
+
         Refresh();
 
         Plugin.Log.LogDebug("Laboratory pins HUD initialized.");
@@ -151,6 +153,7 @@ internal static class LaboratoryPinsHud
 
         List<PinnedFormulaManager.PinnedFormulaViewData> pins =
             PinnedFormulaManager.GetPinnedViewData();
+        HudPositionPreview.AddSampleIfEmpty(pins);
 
         if (HaveSameContent(renderedPins, pins))
         {
@@ -619,6 +622,7 @@ internal static class LaboratoryPinsHud
 
     private static void DestroyExisting()
     {
+        HudPositionPreview.Shutdown();
         Canvas.preWillRenderCanvases -= BeforeLayout;
         Canvas.willRenderCanvases -= AfterLayout;
         layoutUpdateQueued = false;
@@ -659,24 +663,39 @@ internal static class LaboratoryPinsHud
             // those intermediate writes invalidate layout and trigger dimension callbacks.
             Vector2 targetPosition = DefaultPosition;
 
-            if (ExternalHudCompatibility.TryGetExternalBottomScreenY(out float bottomScreenY))
-            {
-                Camera camera = ExternalHudCompatibility.GetCanvasCamera(parentRect);
-                Vector3 defaultLocalPoint = new Vector3(
-                    parentRect.rect.xMax + DefaultPosition.x,
-                    parentRect.rect.yMax + DefaultPosition.y,
-                    panelRect.localPosition.z
-                );
-                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
-                    camera,
-                    parentRect.TransformPoint(defaultLocalPoint)
-                );
-                screenPoint.y = bottomScreenY - ExternalSpacingPixels;
+            Camera camera = ExternalHudCompatibility.GetCanvasCamera(parentRect);
+            Vector3 defaultLocalPoint = new Vector3(
+                parentRect.rect.xMax + DefaultPosition.x,
+                parentRect.rect.yMax + DefaultPosition.y,
+                panelRect.localPosition.z
+            );
+            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
+                camera,
+                parentRect.TransformPoint(defaultLocalPoint)
+            );
+            Vector2 leftPoint = RectTransformUtility.WorldToScreenPoint(
+                camera,
+                parentRect.TransformPoint(
+                    defaultLocalPoint
+                        - new Vector3(panelRect.rect.width * panelRect.localScale.x, 0f, 0f)
+                )
+            );
+            float screenWidth = Mathf.Abs(screenPoint.x - leftPoint.x);
 
-                if (ExternalHudCompatibility.TryGetRecipePinScreenRect(out Rect recipeBounds))
-                {
-                    screenPoint.x = recipeBounds.xMax;
-                }
+            if (ExternalHudCompatibility.TryGetRecipePinScreenRect(out Rect recipeBounds))
+            {
+                screenPoint.x = recipeBounds.xMax;
+            }
+
+            if (
+                ExternalHudCompatibility.TryGetExternalBottomScreenY(
+                    screenPoint.x - screenWidth,
+                    screenPoint.x,
+                    out float bottomScreenY
+                )
+            )
+            {
+                screenPoint.y = bottomScreenY - ExternalSpacingPixels;
 
                 if (
                     RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -737,6 +756,16 @@ internal sealed class LaboratoryPinsLayoutListener : MonoBehaviour
     }
 
     private void OnEnable()
+    {
+        LaboratoryPinsHud.RequestPositionUpdate();
+    }
+
+    private void OnCanvasGroupChanged()
+    {
+        LaboratoryPinsHud.RequestPositionUpdate();
+    }
+
+    private void OnTransformParentChanged()
     {
         LaboratoryPinsHud.RequestPositionUpdate();
     }

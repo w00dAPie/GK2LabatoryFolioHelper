@@ -18,8 +18,8 @@ namespace GK2LaboratoryFolioHelper;
 public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "w00dst0ckOos.GK2LaboratoryFolioHelper";
-    public const string PluginName = "GK2 Laboratory Folio Helper";
-    public const string PluginVersion = "0.2.0";
+    public const string PluginName = "GK2 Known Formula Helper";
+    public const string PluginVersion = "0.2.1";
 
     internal static ManualLogSource Log;
 
@@ -28,6 +28,7 @@ public sealed class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Log = Logger;
+        HudPositionPreview.Configure(Config);
 
         Log.LogInfo($"{PluginName} {PluginVersion} loading...");
 
@@ -36,8 +37,14 @@ public sealed class Plugin : BaseUnityPlugin
 
         RecipePinCompatibilityPatch.TryInstall(_harmony);
         ShoppingListCompatibilityPatch.TryInstall(_harmony);
+        AdditionalRecipePinHuds.Initialize(_harmony);
 
         Log.LogInfo($"{PluginName} loaded.");
+    }
+
+    private void Update()
+    {
+        AdditionalRecipePinHuds.ProcessPendingAssemblies();
     }
 
     private void OnDestroy()
@@ -45,6 +52,7 @@ public sealed class Plugin : BaseUnityPlugin
         PinsInventoryWatcher.DetachAll();
         AlchemyInventoryWatcher.Detach();
         ShoppingListCompatibilityPatch.Shutdown();
+        AdditionalRecipePinHuds.Shutdown();
         LaboratoryPinsHud.Shutdown();
         _harmony?.UnpatchSelf();
     }

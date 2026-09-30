@@ -1,6 +1,6 @@
 {
   "name": "GK2LaboratoryFolioHelper",
-  "version_number": "0.1.0",
+  "version_number": "0.2.1",
   "website_url": "https://github.com/w00dAPie/GK2LabatoryFolioHelper",
   "description": "Alchemy folio pinning, recipe assistance, ingredient availability and laboratory workflow improvements for Graveyard Keeper 2.",
   "dependencies": []
