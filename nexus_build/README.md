@@ -2,6 +2,8 @@
 
 A BepInEx mod for **Graveyard Keeper 2** that improves the alchemy folio and laboratory workflow.
 
+Version **0.2.1** adds optional HUD positioning support for **GK2RecipePin** and **Kebo Recipe Pins**, plus a position preview that works without either mod installed.
+
 ## Features
 
 - Pin known alchemy formulas from the folio.
@@ -25,8 +27,10 @@ A BepInEx mod for **Graveyard Keeper 2** that improves the alchemy folio and lab
 - Optional compatibility with:
   - **Pin My Recipe**
   - **GK2 Shopping List**
+  - **GK2RecipePin**
+  - **Kebo Recipe Pins**
 
-These integrations are optional. The mod does not require either of them.
+These integrations are optional. The mod does not require any of them.
 
 ## How it works
 
@@ -87,6 +91,12 @@ BepInEx/plugins/GK2KnownFormulaHelper
 3. Copy `GK2KnownFormulaHelper.dll` into that folder.
 4. Start or restart the game.
 
+### Updating
+
+Close the game and extract the Nexus ZIP into the game folder, merging its `BepInEx` folder with the existing one. Replace the previous helper DLL. If your older installation uses another plugin folder or the filename `GK2LaboratoryFolioHelper.dll`, remove that old helper copy so only one version is loaded. Keep your configuration file; the plugin ID and configuration filename are unchanged.
+
+The HUD position preview is disabled by default. If you enabled it while testing, set `Enabled = false` in `[Debug.HudPositionPreview]` for normal play.
+
 ## Building
 
 Clone the repository:
@@ -138,7 +148,7 @@ If the running game keeps the old DLL locked, installation may leave a `.dll.pre
 
 ### Release packages and upload
 
-With a valid `manifest.json` and `icon.png`, create Thunderstore and Nexus packages under:
+With a valid `manifest.json` and `icon_256.png`, create Thunderstore and Nexus packages under:
 
 ```text
 dist/thunderstore/
@@ -180,15 +190,23 @@ Nexus uploads remain manual.
 
 Optional mod integrations are detected dynamically at runtime and are not hard compile-time dependencies.
 
+Compatibility code covers **Pin My Recipe**, **GK2 Shopping List**, **GK2RecipePin** and **Kebo Recipe Pins 2.5.1**. The HUD interfaces have been checked against locally available DLLs. The combined in-game layout has not yet been verified with every mod; other HUD mods and very tall pin lists may still need layout adjustments.
+
 ### Pin My Recipe
 
 The Known Formula Helper HUD reacts to compatible recipe pin elements and can reposition itself to avoid overlapping the **Pin My Recipe** HUD.
 
-When Pin My Recipe is detected, the alchemy pin limit can be reduced to keep the combined HUD layout compact.
-
 ### GK2 Shopping List
 
 The HUD detects the visible **GK2 Shopping List** panel and can position alchemy formula cards below compatible HUD elements when necessary.
+
+### GK2RecipePin and Kebo Recipe Pins
+
+The helper also detects the **GK2RecipePin** tracker and the **Kebo Recipe Pins 2.5.1** HUD, including when these mods load after BepInEx.
+
+Alchemy formula cards are positioned below visible panels that overlap their horizontal screen area. Kebo lists placed elsewhere on screen do not shift the formula cards unless they reach into that area. Hidden panels, including Kebo's list when all ready pins are hidden, do not reserve space.
+
+The layout reacts to panel creation, resizing, visibility changes and Kebo's positioning updates. Install either mod separately with its own required loader and dependencies; neither is bundled with the helper.
 
 ## Controller support
 
@@ -214,6 +232,8 @@ Special thanks for the inspiration around:
 Compatibility with **Pin My Recipe** and **GK2 Shopping List** is optional and handled dynamically at runtime.
 
 ## Development notes
+
+To test HUD positions without installing other pin mods, set `Enabled = true` under `[Debug.HudPositionPreview]` in `BepInEx/config/w00dst0ckOos.GK2LaboratoryFolioHelper.cfg` and restart the game. In a loaded save, **F7** advances through simulated panel positions and **F6** goes back. The cases include small/tall panels, right/left/center placement, two panels, and hidden panels. A temporary formula card appears if no formulas are pinned. Cycle to **Off** to end the preview, or set `Enabled = false` and restart to disable it completely. This tests positioning; the other mods' loaders are not simulated.
 
 - Narrow Harmony patches
 - Preserve vanilla crafting behaviour

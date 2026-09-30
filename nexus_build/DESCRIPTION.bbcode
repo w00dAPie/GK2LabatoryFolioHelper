@@ -1,0 +1,188 @@
+[size=5][b]GK2 Known Formula Helper[/b][/size]
+
+Tired of flipping through the alchemy folio and manually rebuilding the same mixes over and over?
+
+[b]GK2 Known Formula Helper[/b] streamlines the alchemy workflow by letting you pin known formulas, track ingredient availability, choose recipes directly from the vanilla alchemy folio, and load the best matching mix straight into the laboratory.
+
+[size=4][b]Features[/b][/size]
+
+[list]
+[*]Pin known alchemy formulas[/*]
+[*]Compact HUD display for pinned recipes[/*]
+[*]Ready / Missing status[/*]
+[*]Owned / required ingredient counts[/*]
+[*]Vendor availability and stock information[/*]
+[*]Powder-free alternative recipes when available[/*]
+[*]Automatic best-known mix selection[/*]
+[*]Open the vanilla alchemy folio directly from the laboratory[/*]
+[*]Select known formulas directly from the folio[/*]
+[*]Load the best matching mix directly into the alchemy station[/*]
+[*]Available crafting resources and connected storage are considered when selecting a mix[/*]
+[*]Recipes with missing ingredients are automatically pinned[/*]
+[*]Recipes are still loaded into the laboratory even when ingredients are missing[/*]
+[*]Normal folio pin / unpin behavior is preserved outside laboratory selection mode[/*]
+[*]Controller support for folio recipe selection[/*]
+[*]Optional compatibility with [b]Pin My Recipe[/b][/*]
+[*]Optional compatibility with [b]GK2 Shopping List[/b][/*]
+[*]Optional compatibility with [b]GK2RecipePin[/b][/*]
+[*]Optional compatibility with [b]Kebo Recipe Pins[/b][/*]
+[/list]
+
+[size=4][b]How it works[/b][/size]
+
+The helper evaluates your known alchemy formulas and determines the most useful ingredient combination based on your currently available crafting resources.
+
+When selecting a formula from the laboratory, the mod prefers a mix that can already be crafted. If no complete mix is currently available, it selects the closest suitable combination based on the ingredients you already have.
+
+HUD ingredient counts show items in the player inventory. Laboratory mix selection also considers accessible crafting storage.
+
+Pinned formulas are shown directly on the HUD so you can quickly see:
+
+[list]
+[*]whether a recipe is ready[/*]
+[*]which ingredients are missing[/*]
+[*]how many ingredients you currently own[/*]
+[*]whether missing ingredients can be purchased[/*]
+[*]vendor name and stock when available[/*]
+[*]a powder-free alternative when a suitable known mix exists[/*]
+[/list]
+
+[size=4][b]Laboratory Folio Workflow[/b][/size]
+
+When the laboratory does not currently contain a valid mix, the empty result slot can be used to open the normal alchemy folio.
+
+Select a known formula from the folio and the mod will automatically choose the best matching mix for your current resources.
+
+[list]
+[*]If all required ingredients are available, the mix is loaded directly into the laboratory.[/*]
+[*]If ingredients are missing, the mix is still loaded into the laboratory.[/*]
+[*]Recipes with missing ingredients are automatically pinned so the missing materials remain visible on the HUD.[/*]
+[/list]
+
+This removes the need for a separate recipe selection dialog and keeps the workflow inside the familiar vanilla folio.
+
+When the alchemy folio is opened normally, clicking formulas continues to pin or unpin them as usual.
+
+[size=4][b]Mix Selection[/b][/size]
+
+Laboratory recipe selection considers the crafting inventory available to the player when choosing the best mix.
+
+Craftable combinations are preferred so that recipes you can make immediately are selected before incomplete alternatives.
+
+If a complete recipe is not currently possible, the helper chooses the combination that best matches the resources you already have.
+
+The mod does not automatically consume ingredients when selecting a formula. Vanilla alchemy crafting behavior remains responsible for the actual crafting process.
+
+[size=4][b]Powder-free Alternatives[/b][/size]
+
+Some known formulas can be produced using several different ingredient combinations.
+
+If the preferred combination contains alchemic powder and a known alternative without powder exists, the HUD can display that alternative underneath the main recipe.
+
+This makes it easier to save powders when another valid ingredient combination is available.
+
+[size=4][b]Compatibility[/b][/size]
+
+Optional HUD integrations are available for:
+
+[list]
+[*][b]Pin My Recipe[/b][/*]
+[*][b]GK2 Shopping List[/b][/*]
+[*][b]GK2RecipePin[/b][/*]
+[*][b]Kebo Recipe Pins 2.5.1[/b][/*]
+[/list]
+
+All four integrations are detected dynamically at runtime. None of these mods is required to use Known Formula Helper. Install them separately with their own required loaders and dependencies.
+
+The helper can reposition its formula cards below compatible HUD elements.
+
+For GK2RecipePin and Kebo Recipe Pins, visible panels are considered when they overlap the formula cards' horizontal screen area. Kebo lists placed elsewhere on screen do not shift the formula cards unless they reach into that area. Hidden panels, including Kebo's list when all ready pins are hidden, do not reserve space.
+
+The new integrations also support mods that load after BepInEx and respond to panel size, visibility and positioning changes.
+
+[b]Compatibility status:[/b] The HUD interfaces have been checked against locally available DLLs. The combined in-game layout has not yet been verified with every mod. Other HUD mods and very tall pin lists may still need layout adjustments.
+
+[size=4][b]Controller Support[/b][/size]
+
+The vanilla alchemy folio remains controller navigable when opened from the laboratory.
+
+Formula selection works through the existing folio navigation rather than a separate custom recipe dialog.
+
+[size=4][b]Version 0.2.1[/b][/size]
+
+[list]
+[*]Added optional HUD positioning support for [b]GK2RecipePin[/b] and [b]Kebo Recipe Pins 2.5.1[/b][/*]
+[*]Added detection of these mods when they load after BepInEx[/*]
+[*]Formula cards move below visible, horizontally overlapping pin panels[/*]
+[*]Hidden panels and panels outside the formula cards' horizontal screen area do not reserve space[/*]
+[*]The layout responds to panel creation, resizing, visibility changes and Kebo's positioning updates[/*]
+[*]Added an optional position preview for checking layouts without installing other pin mods; disabled by default[/*]
+[/list]
+
+[size=4][b]Previous Update: 0.2.0[/b][/size]
+
+[list]
+[*]Added direct access to the vanilla alchemy folio from the laboratory result slot[/*]
+[*]Added direct formula selection from the folio[/*]
+[*]Selected formulas now load their best matching mix directly into the laboratory[/*]
+[*]Laboratory mix selection now considers currently available crafting resources[/*]
+[*]Connected crafting storage can be considered when choosing the best mix[/*]
+[*]Craftable mixes are preferred over incomplete alternatives[/*]
+[*]Recipes with missing ingredients are automatically pinned[/*]
+[*]Incomplete recipes are still loaded into the laboratory[/*]
+[*]Added powder-free alternative recipe display[/*]
+[*]Improved ingredient availability handling[/*]
+[*]Preserved normal folio pin / unpin behavior[/*]
+[*]Removed the old custom pinned-recipe selection dialog[/*]
+[*]Improved controller support for the new folio-based workflow[/*]
+[/list]
+
+[size=4][b]Credits and Inspiration[/b][/size]
+
+A big thank you to the authors of [b]Pin My Recipe[/b] and [b]GK2 Shopping List[/b].
+
+Both mods provided great ideas for presenting pinned recipes, ingredient information, and compact HUD elements in a clear and useful way.
+
+GK2 Known Formula Helper is an independent implementation, but its HUD design and usability were strongly inspired by ideas found in these mods.
+
+Special thanks for the inspiration around:
+
+[list]
+[*]compact pinned recipe layouts[/*]
+[*]readable ingredient presentation[/*]
+[*]HUD positioning and usability[/*]
+[*]keeping useful information visible without opening additional windows[/*]
+[/list]
+
+[size=4][b]Requirements[/b][/size]
+
+[list]
+[*]Graveyard Keeper 2[/*]
+[*]BepInEx 5[/*]
+[/list]
+
+Tested with:
+
+[list]
+[*]Graveyard Keeper 2 1.007.1[/*]
+[*]BepInEx 5.4.23.5[/*]
+[/list]
+
+[size=4][b]Installation[/b][/size]
+
+[list=1]
+[*]Install BepInEx 5.[/*]
+[*]Create the folder:
+[code]BepInEx/plugins/GK2KnownFormulaHelper[/code]
+[/*]
+[*]Copy [b]GK2KnownFormulaHelper.dll[/b] into that folder.[/*]
+[*]Start or restart the game.[/*]
+[/list]
+
+[size=4][b]Updating[/b][/size]
+
+Close the game, extract the new Nexus ZIP into the game folder and replace the previous helper DLL.
+
+If an older installation uses another plugin folder or the filename [b]GK2LaboratoryFolioHelper.dll[/b], remove that old helper copy so only one version is loaded. Keep your existing configuration file.
+
+The position preview is disabled by default. If you enabled it for testing, set [b]Enabled = false[/b] in the [b]Debug.HudPositionPreview[/b] section of the configuration file for normal play.
