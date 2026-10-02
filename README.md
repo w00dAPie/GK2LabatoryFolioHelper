@@ -108,16 +108,7 @@ The HUD position preview is disabled by default. If you enabled it while testing
 
 ## Building
 
-Clone the repository:
-
-```powershell
-git clone https://github.com/w00dAPie/GK2LabatoryFolioHelper.git
-cd GK2LabatoryFolioHelper
-```
-
-Create a local `Directory.Build.props` based on [Directory.Build.props.example](Directory.Build.props.example).
-
-Then:
+Restore tools and build the project:
 
 ```powershell
 dotnet tool restore
@@ -125,76 +116,19 @@ dotnet tool run csharpier format .
 dotnet build -c Release
 ```
 
-The DLL is created at:
+The compiled DLL is created at:
 
 ```text
 bin/Release/net472/GK2KnownFormulaHelper.dll
 ```
 
-### Build and install locally
+Release packaging and publishing are handled by private maintainer tooling and are not part of this repository.
 
-The `publish.ps1` workflow resolves `GameDir` from MSBuild, formats and builds the project, checks the version, and verifies the installed DLL with SHA256.
+## Release packaging
 
-Existing DLLs are backed up under:
+Release packaging for Nexus Mods and Thunderstore is handled with private maintainer tooling.
 
-```text
-artifacts/install-backups/
-```
-
-Build and install locally:
-
-```powershell
-.\publish.ps1 -InstallLocal -SkipPackages
-```
-
-Use `-SkipPackages` without `-InstallLocal` to build only.
-
-These commands do not upload anything.
-
-Restart the game after installing to load the new DLL.
-
-If the running game keeps the old DLL locked, installation may leave a `.dll.previous-*` file next to it. It is not loaded as a plugin and can be removed after closing the game.
-
-### Release packages and upload
-
-With a valid `manifest.json` and `icon_256.png`, create Thunderstore and Nexus packages under:
-
-```text
-dist/thunderstore/
-dist/nexus/
-```
-
-Run:
-
-```powershell
-.\publish.ps1 -NoPublish
-```
-
-An upload is only performed with `-Publish`.
-
-Thunderstore publishing additionally requires:
-
-- `thunderstore.toml`
-- the `tcli` tool
-- a local `.thunderstore-token` file
-
-The token file should remain ignored by Git.
-
-The Thunderstore configuration must package:
-
-```text
-bin/Release/net472/GK2KnownFormulaHelper.dll
-```
-
-The script synchronizes the package version with the project version. The following versions should match before publishing:
-
-- project version
-- `Plugin.PluginVersion`
-- `manifest.json`
-- `thunderstore.toml`
-
-Nexus uploads remain manual.
-
+The public repository contains the source code, build configuration, manifest metadata, assets and licenses required for development, but does not include the maintainer's release automation scripts.
 ## Compatibility
 
 Optional mod integrations are detected dynamically at runtime and are not hard compile-time dependencies.
@@ -288,3 +222,4 @@ See [CHANGELOG.md](CHANGELOG.md).
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+

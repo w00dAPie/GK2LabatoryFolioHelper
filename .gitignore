@@ -54,6 +54,9 @@ tools/AlegreyaFontBundleBuilder/Assets/Fonts/*.asset
 tools/AlegreyaFontBundleBuilder/Assets/Fonts/*.asset.meta
 
 *.png
-
-/nexus_build/
 /docs/
+/nexus_build/
+/docs/publish.ps1
+scripts/Publish.Common.ps1
+scripts/Publish.Packaging.ps1
+publish.ps1
