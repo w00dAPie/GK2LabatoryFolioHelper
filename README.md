@@ -2,7 +2,7 @@
 
 A BepInEx mod for **Graveyard Keeper 2** that improves the alchemy folio and laboratory workflow.
 
-Version **0.2.1** adds optional HUD positioning support for **GK2RecipePin** and **Kebo Recipe Pins**, plus a position preview that works without either mod installed.
+Version **0.3.0** adds ranked alternative laboratory mixes, optional HUD positioning support for **GK2RecipePin** and **Kebo Recipe Pins**, plus bundled typography support for readable helper text.
 
 ## Features
 
@@ -18,6 +18,9 @@ Version **0.2.1** adds optional HUD positioning support for **GK2RecipePin** and
 - Open the normal alchemy folio directly from the laboratory result slot.
 - Select a known formula directly from the folio.
 - Automatically load the best matching mix into the laboratory.
+- Shows up to ten known mix variants for the selected formula.
+- Switches between variants with `<` / `>` buttons or Left Arrow / Right Arrow.
+- Updates the laboratory ingredient slots immediately when a variant changes.
 - Craftable mixes are preferred when the required resources are already available.
 - Laboratory mix selection considers available crafting resources and accessible storage.
 - Recipes with missing ingredients are automatically pinned.
@@ -59,6 +62,12 @@ Selecting a known formula from the folio will:
 The recipe is still loaded when incomplete, allowing the laboratory to show the available and missing ingredients normally.
 
 When the alchemy folio is opened outside this laboratory selection mode, clicking formulas continues to pin or unpin them normally.
+
+### Mix variants
+
+After selecting a formula from the laboratory folio, the helper ranks up to ten known mixes using the same resource-aware rules as the initial selection. If at least one mix is craftable, only craftable variants are shown. If none is currently craftable, the helper still shows up to ten useful variants with missing ingredients. The first mix loads automatically. Use the `<` and `>` buttons beside the ingredient slots, or Left Arrow and Right Arrow (Comma and Period also work), to load another variant. The ingredient slots, counts and craft result are redrawn immediately.
+
+The variant arrows are placed to the left and right of the laboratory ingredient slots. Their positions adapt to the two-slot Laboratory I and the three-slot Laboratory II. With a controller, press D-pad left/right while variants are active to switch mixes. The on-screen `+` and `−` controls remain available for changing the craft count.
 
 ## Powder-free alternatives
 
@@ -214,6 +223,33 @@ The normal alchemy folio remains controller navigable when opened from the labor
 
 Formula selection uses the existing folio navigation instead of a separate custom recipe picker.
 
+When mix variants are active, controller focus follows the laboratory row: result, left arrow, each available ingredient slot, right arrow, Craft Max, and back to result. Laboratory I contributes two ingredient slots; Laboratory II contributes three.
+
+Press R3 anywhere in the game to remove the most recently added formula pin; opening the folio is not required.
+If another mod uses R3, disable `RemoveLastPinWithR3 = false` under `[Input]` in the helper configuration.
+
+## UI typography
+
+The helper uses the optional Alegreya Sans TMP font by default for readable
+helper text. To switch back to the game's font, set this in the BepInEx
+configuration:
+
+```ini
+[UI]
+FontStyle = Game
+```
+
+`Game` keeps the current game font. `Sharp` applies Alegreya Sans only to
+formula names, ingredient and vendor text, statuses, counts, alternative
+recipe labels, and helper preview text. Variant arrows, controller symbols,
+navigation glyphs, and other symbolic controls retain their cloned vanilla
+font and material.
+
+Sharp requires `assets/knownformulahelper_fonts.bundle` beside the plugin DLL.
+If it is missing or does not contain the required glyphs, the helper uses the
+game font and logs one fallback warning. The bundle is optional and is never
+loaded globally.
+
 ## Credits and inspiration
 
 A big thank you to the authors of **Pin My Recipe** and **GK2 Shopping List**.
@@ -228,6 +264,10 @@ Special thanks for the inspiration around:
 - readable ingredient presentation
 - HUD positioning and usability
 - keeping useful information visible without opening additional windows
+
+Alegreya Sans is Copyright 2013 The Alegreya Sans Project Authors and is
+licensed under the SIL Open Font License 1.1. The complete license is included
+with the font asset at `LICENSES/AlegreyaSans-OFL.txt`.
 
 Compatibility with **Pin My Recipe** and **GK2 Shopping List** is optional and handled dynamically at runtime.
 

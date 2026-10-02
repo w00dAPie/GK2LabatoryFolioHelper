@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using BepInEx.Bootstrap;
 using GK2LaboratoryFolioHelper.Helpers;
+using GK2LaboratoryFolioHelper.Infrastructure;
 using HarmonyLib;
 
 namespace GK2LaboratoryFolioHelper.Patches;
@@ -46,7 +47,7 @@ internal static class RecipePinCompatibilityPatch
 
         installed = true;
 
-        Plugin.Log.LogDebug("RecipePin HUD change hooks installed.");
+        ModLog.Debug("RecipePin HUD change hooks installed.");
     }
 
     private static void PatchPostfix(Harmony harmony, Type type, string methodName)
@@ -55,7 +56,7 @@ internal static class RecipePinCompatibilityPatch
 
         if (original == null)
         {
-            Plugin.Log.LogWarning($"RecipePin method '{methodName}' not found.");
+            ModLog.Warning($"RecipePin method '{methodName}' not found.");
 
             return;
         }

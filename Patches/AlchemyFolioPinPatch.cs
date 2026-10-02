@@ -1,5 +1,6 @@
 using System.Reflection;
 using GK2LaboratoryFolioHelper.Helpers;
+using GK2LaboratoryFolioHelper.Infrastructure;
 using HarmonyLib;
 using LazyBearTechnology;
 using TMPro;
@@ -99,7 +100,7 @@ internal static class AlchemyFolioPinPatch
 
         if (!found || string.IsNullOrEmpty(mixId))
         {
-            Plugin.Log.LogWarning($"No usable laboratory mix found for '{formula.id}'.");
+            ModLog.Warning($"No usable laboratory mix found for '{formula.id}'.");
 
             return;
         }
@@ -108,27 +109,29 @@ internal static class AlchemyFolioPinPatch
 
         if (!isCraftable && !PinnedFormulaManager.IsPinned(formula.id))
         {
-            PinnedFormulaManager.Toggle(formula);
+            PinnedFormulaManager.PinForMissingIngredients(formula);
 
-            Plugin.Log.LogInfo(
+            ModLog.Info(
                 $"Alchemy formula pinned because ingredients are missing | "
                     + $"formula='{formula.id}' | "
                     + $"mix='{mixId}'"
             );
         }
 
+        folio?.Close();
         AlchemyFolioSelectionContext.End();
 
-        folio?.Close();
-
         bool loaded = AlchemyRecipeLoader.LoadMix(alchemyWindow, mixId);
+        bool chooserStarted =
+            loaded && AlchemyMixSelectionController.Begin(alchemyWindow, formula.id);
 
-        Plugin.Log.LogInfo(
+        ModLog.Info(
             $"Alchemy formula selected from folio | "
                 + $"formula='{formula.id}' | "
                 + $"mix='{mixId}' | "
                 + $"craftable={isCraftable} | "
-                + $"loaded={loaded}"
+                + $"loaded={loaded} | "
+                + $"variants={chooserStarted}"
         );
     }
 }

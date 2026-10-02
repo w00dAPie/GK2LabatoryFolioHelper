@@ -18,6 +18,11 @@ packages/
 *.nupkg
 *.snupkg
 
+# The Unity builder's package manifest is source, not a NuGet package folder.
+!tools/AlegreyaFontBundleBuilder/Packages/
+!tools/AlegreyaFontBundleBuilder/Packages/manifest.json
+!tools/AlegreyaFontBundleBuilder/Packages/packages-lock.json
+
 *.log
 
 .DS_Store
@@ -38,4 +43,17 @@ publish.ps1
 .thunderstore-token
 *.toml
 
+# Unity TMP font bundle builder output and imported package resources.
+tools/AlegreyaFontBundleBuilder/Library/
+tools/AlegreyaFontBundleBuilder/Temp/
+tools/AlegreyaFontBundleBuilder/BuildOutput/
+tools/AlegreyaFontBundleBuilder/UserSettings/
+tools/AlegreyaFontBundleBuilder/Assets/Resources/
+tools/AlegreyaFontBundleBuilder/Assets/TextMesh Pro/
+tools/AlegreyaFontBundleBuilder/Assets/Fonts/*.asset
+tools/AlegreyaFontBundleBuilder/Assets/Fonts/*.asset.meta
+
 *.png
+
+/nexus_build/
+/docs/

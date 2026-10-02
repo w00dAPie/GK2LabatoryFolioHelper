@@ -7,6 +7,7 @@ using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using GK2LaboratoryFolioHelper.Helpers;
+using GK2LaboratoryFolioHelper.Infrastructure;
 using HarmonyLib;
 using UnityEngine;
 
@@ -50,7 +51,7 @@ internal static class ShoppingListCompatibilityPatch
 
             if (tick == null || AccessTools.Field(hudType, "_sig")?.FieldType != typeof(string))
             {
-                Plugin.Log.LogWarning("Shopping List HudPanel.Tick layout hooks were not found.");
+                ModLog.Warning("Shopping List HudPanel.Tick layout hooks were not found.");
                 return;
             }
 
@@ -68,11 +69,11 @@ internal static class ShoppingListCompatibilityPatch
             plugin = instance;
             config.SettingChanged += OnSettingChanged;
             installed = true;
-            Plugin.Log.LogDebug("Shopping List HUD change hooks installed (no frame polling).");
+            ModLog.Debug("Shopping List HUD change hooks installed (no frame polling).");
         }
         catch (Exception ex)
         {
-            Plugin.Log.LogWarning($"Could not install Shopping List HUD hooks: {ex.Message}");
+            ModLog.Warning($"Could not install Shopping List HUD hooks: {ex.Message}");
         }
     }
 

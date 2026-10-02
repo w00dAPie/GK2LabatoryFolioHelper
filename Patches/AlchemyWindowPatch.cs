@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using GK2LaboratoryFolioHelper.Helpers;
+using GK2LaboratoryFolioHelper.Infrastructure;
 using HarmonyLib;
 using LazyBearTechnology;
 
@@ -88,7 +89,7 @@ internal static class AlchemyWindowPatch
 
         if (folio == null)
         {
-            Plugin.Log.LogWarning("Could not obtain UIAlchemyFolioWindow.");
+            ModLog.Warning("Could not obtain UIAlchemyFolioWindow.");
 
             return;
         }
@@ -101,6 +102,6 @@ internal static class AlchemyWindowPatch
 
         folio.Open(folioData);
 
-        Plugin.Log.LogDebug("Opened alchemy folio from laboratory.");
+        ModLog.Debug("Opened alchemy folio from laboratory.");
     }
 }
