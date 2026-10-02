@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <Compile Remove="tools\**" />
+    <Compile Remove="FrameworkIntegration\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>

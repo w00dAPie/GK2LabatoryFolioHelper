@@ -1,6 +1,6 @@
 namespace GK2LaboratoryFolioHelper.Configuration;
 
-internal enum UiFontStyle
+public enum UiFontStyle
 {
     Game,
     Sharp,

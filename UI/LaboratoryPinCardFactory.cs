@@ -21,8 +21,9 @@ internal static class LaboratoryPinCardFactory
             typeof(RectTransform),
             typeof(Image),
             typeof(LazyButton),
-            typeof(HorizontalLayoutGroup)
+            typeof(VerticalLayoutGroup)
         );
+
         AttachToHud(blockObject, contentRoot);
 
         Image background = blockObject.GetComponent<Image>();
@@ -31,6 +32,7 @@ internal static class LaboratoryPinCardFactory
 
         LazyButton button = blockObject.GetComponent<LazyButton>();
         AlchemyFormulaDef formula = GameBalance.Me.GetDataOrNull<AlchemyFormulaDef>(pin.FormulaId);
+
         if (button != null && formula != null)
         {
             button.interactable = true;
@@ -38,31 +40,38 @@ internal static class LaboratoryPinCardFactory
             button.onClick.AddListener(() => PinnedFormulaManager.Toggle(formula));
         }
 
-        HorizontalLayoutGroup blockLayout = blockObject.GetComponent<HorizontalLayoutGroup>();
+        VerticalLayoutGroup blockLayout = blockObject.GetComponent<VerticalLayoutGroup>();
         blockLayout.padding = new RectOffset(6, 6, 4, 4);
-        blockLayout.spacing = 8f;
+        blockLayout.spacing = 4f;
         blockLayout.childAlignment = TextAnchor.UpperLeft;
         blockLayout.childControlWidth = true;
         blockLayout.childControlHeight = true;
-        blockLayout.childForceExpandWidth = false;
+        blockLayout.childForceExpandWidth = true;
         blockLayout.childForceExpandHeight = false;
 
+        /*
+ * Header:
+ *
+ * [formula icon] [title]
+ *                [status]
+ */
         GameObject header = new(
             "Header",
             typeof(RectTransform),
             typeof(HorizontalLayoutGroup),
             typeof(LayoutElement)
         );
+
         AttachToHud(header, blockObject.transform);
 
         LayoutElement headerSize = header.GetComponent<LayoutElement>();
-        headerSize.minWidth = 108f;
-        headerSize.preferredWidth = 108f;
-        headerSize.flexibleWidth = 0f;
+        headerSize.minWidth = 0f;
+        headerSize.preferredWidth = 0f;
+        headerSize.flexibleWidth = 1f;
         headerSize.minHeight = 30f;
 
         HorizontalLayoutGroup headerLayout = header.GetComponent<HorizontalLayoutGroup>();
-        headerLayout.spacing = 7f;
+        headerLayout.spacing = 8f;
         headerLayout.childAlignment = TextAnchor.MiddleLeft;
         headerLayout.childControlWidth = true;
         headerLayout.childControlHeight = true;
@@ -77,6 +86,7 @@ internal static class LaboratoryPinCardFactory
             typeof(VerticalLayoutGroup),
             typeof(LayoutElement)
         );
+
         AttachToHud(titleGroup, header.transform);
 
         LayoutElement titleSize = titleGroup.GetComponent<LayoutElement>();
@@ -85,6 +95,7 @@ internal static class LaboratoryPinCardFactory
         titleSize.flexibleWidth = 1f;
 
         VerticalLayoutGroup titleLayout = titleGroup.GetComponent<VerticalLayoutGroup>();
+        titleLayout.spacing = 0f;
         titleLayout.childControlWidth = true;
         titleLayout.childControlHeight = true;
         titleLayout.childForceExpandWidth = true;
@@ -98,7 +109,7 @@ internal static class LaboratoryPinCardFactory
             21f,
             TextAlignmentOptions.Left,
             Color.white,
-            wrap: true
+            wrap: false
         );
 
         TextMeshProUGUI statusLabel = CreateText(
@@ -108,16 +119,24 @@ internal static class LaboratoryPinCardFactory
             16f,
             TextAlignmentOptions.Left,
             pin.IsCraftable ? new Color(0.50f, 0.84f, 0.42f) : Color.white,
-            wrap: true
+            wrap: false
         );
+
         ModTypography.ApplyStatus(statusLabel);
 
+        /*
+         * Ingredients:
+         *
+         * [ingredient icon] [ingredient name..................] [count]
+         * [ingredient icon] [ingredient name..................] [count]
+         */
         GameObject ingredients = new(
             "Ingredients",
             typeof(RectTransform),
             typeof(VerticalLayoutGroup),
             typeof(LayoutElement)
         );
+
         AttachToHud(ingredients, blockObject.transform);
 
         LayoutElement ingredientSize = ingredients.GetComponent<LayoutElement>();
@@ -126,6 +145,7 @@ internal static class LaboratoryPinCardFactory
         ingredientSize.flexibleWidth = 1f;
 
         VerticalLayoutGroup ingredientLayout = ingredients.GetComponent<VerticalLayoutGroup>();
+
         ingredientLayout.spacing = 3f;
         ingredientLayout.childAlignment = TextAnchor.MiddleLeft;
         ingredientLayout.childControlWidth = true;
@@ -151,6 +171,7 @@ internal static class LaboratoryPinCardFactory
             TextAlignmentOptions.Left,
             new Color(0.72f, 0.72f, 0.72f)
         );
+
         ModTypography.ApplyText(alternativeLabel);
 
         foreach (
@@ -178,9 +199,11 @@ internal static class LaboratoryPinCardFactory
             typeof(HorizontalLayoutGroup),
             typeof(LayoutElement)
         );
+
         AttachToHud(row, parent);
 
         row.GetComponent<LayoutElement>().minHeight = alternative ? 14f : 16f;
+
         HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
         layout.spacing = 4f;
         layout.childAlignment = TextAnchor.MiddleLeft;
@@ -190,9 +213,11 @@ internal static class LaboratoryPinCardFactory
         layout.childForceExpandHeight = false;
 
         ItemDef item = GameBalance.Me.GetDataOrNull<ItemDef>(ingredient.ItemId);
+
         CreateItemIcon(row.transform, item, alternative ? 12f : 14f, framed: false);
 
         string nameText = ingredient.Name;
+
         if (ingredient.IsBuyable && !string.IsNullOrEmpty(ingredient.VendorName))
         {
             nameText += $"  <size=10>{ingredient.VendorName} ({ingredient.VendorStock})</size>";
@@ -207,6 +232,7 @@ internal static class LaboratoryPinCardFactory
             color,
             wrap: true
         );
+
         if (ingredient.IsBuyable && !string.IsNullOrEmpty(ingredient.VendorName))
         {
             ModTypography.ApplyVendorText(name);
@@ -229,6 +255,7 @@ internal static class LaboratoryPinCardFactory
             TextAlignmentOptions.Right,
             color
         );
+
         ModTypography.ApplyCount(count);
 
         LayoutElement countLayout = count.GetComponent<LayoutElement>();
@@ -240,12 +267,16 @@ internal static class LaboratoryPinCardFactory
     private static void CreateItemIcon(Transform parent, ItemDef item, float side, bool framed)
     {
         GameObject slot = new("ItemIcon", typeof(RectTransform), typeof(LayoutElement));
+
         AttachToHud(slot, parent);
+
         LayoutElement layout = slot.GetComponent<LayoutElement>();
         layout.minWidth = side;
         layout.preferredWidth = side;
         layout.minHeight = side;
         layout.preferredHeight = side;
+        layout.flexibleWidth = 0f;
+        layout.flexibleHeight = 0f;
 
         if (framed)
         {
@@ -255,19 +286,25 @@ internal static class LaboratoryPinCardFactory
         }
 
         GameObject iconObject = new("Icon", typeof(RectTransform), typeof(Image));
+
         AttachToHud(iconObject, slot.transform);
+
         RectTransform rect = iconObject.GetComponent<RectTransform>();
         rect.anchorMin = Vector2.zero;
         rect.anchorMax = Vector2.one;
+
         float inset = framed ? 3f : 0f;
+
         rect.offsetMin = new Vector2(inset, inset);
         rect.offsetMax = new Vector2(-inset, -inset);
 
         Image icon = iconObject.GetComponent<Image>();
+
         icon.sprite =
             item == null
                 ? null
                 : LazySingletonSO<EasySpritesCollection>.Instance.GetSprite(item.iconId);
+
         icon.preserveAspect = true;
         icon.raycastTarget = false;
         icon.enabled = icon.sprite != null;
@@ -289,6 +326,7 @@ internal static class LaboratoryPinCardFactory
             typeof(TextMeshProUGUI),
             typeof(LayoutElement)
         );
+
         AttachToHud(textObject, parent);
 
         LayoutElement layout = textObject.GetComponent<LayoutElement>();
@@ -300,9 +338,13 @@ internal static class LaboratoryPinCardFactory
         label.fontSize = fontSize;
         label.color = color;
         label.alignment = alignment;
+
         ModTypography.ApplyTitle(label);
+
         label.textWrappingMode = wrap ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+
         label.overflowMode = wrap ? TextOverflowModes.Overflow : TextOverflowModes.Ellipsis;
+
         return label;
     }
 
