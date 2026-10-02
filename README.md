@@ -2,7 +2,7 @@
 
 A BepInEx mod for **Graveyard Keeper 2** that improves the alchemy folio and laboratory workflow.
 
-Version **0.3.0** adds ranked alternative laboratory mixes, optional HUD positioning support for **GK2RecipePin** and **Kebo Recipe Pins**, plus bundled typography support for readable helper text.
+Version **0.3.1** adds ranked alternative laboratory mixes, optional HUD positioning support for **GK2RecipePin** and **Kebo Recipe Pins**, plus bundled typography support for readable helper text.
 
 ## Features
 
@@ -67,7 +67,7 @@ When the alchemy folio is opened outside this laboratory selection mode, clickin
 
 After selecting a formula from the laboratory folio, the helper ranks up to ten known mixes using the same resource-aware rules as the initial selection. If at least one mix is craftable, only craftable variants are shown. If none is currently craftable, the helper still shows up to ten useful variants with missing ingredients. The first mix loads automatically. Use the `<` and `>` buttons beside the ingredient slots, or Left Arrow and Right Arrow (Comma and Period also work), to load another variant. The ingredient slots, counts and craft result are redrawn immediately.
 
-The variant arrows are placed to the left and right of the laboratory ingredient slots. Their positions adapt to the two-slot Laboratory I and the three-slot Laboratory II. With a controller, press D-pad left/right while variants are active to switch mixes. The on-screen `+` and `−` controls remain available for changing the craft count.
+The variant arrows are placed to the left and right of the laboratory ingredient slots. Their positions adapt to the two-slot Laboratory I and the three-slot Laboratory II. With a controller, press D-pad left/right while variants are active to switch mixes. The on-screen `+` and `âˆ’` controls remain available for changing the craft count.
 
 ## Powder-free alternatives
 

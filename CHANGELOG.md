@@ -2,6 +2,15 @@
 
 All notable changes to **GK2 Known Formula Helper** are documented here.
 
+## [0.3.1] - 2026-10-02
+
+Added optional GK2 Mod Framework integration while keeping the main mod fully standalone.
+Added Framework settings for maximum laboratory mix variants and UI font style.
+Added configurable laboratory mix variant limit.
+Improved the laboratory pin card layout so formula titles have more horizontal space.
+Kept ingredient quantities in a dedicated right-aligned column.
+Updated local build, install, and release packaging to include the optional Framework bridge DLL.
+
 ## [0.3.0] - 2026-10-02
 
 - Show up to ten craftable laboratory mix variants when available.
@@ -54,9 +63,9 @@ All notable changes to **GK2 Known Formula Helper** are documented here.
 - Added `<` and `>` controls next to the laboratory result slot.
 - Added Left Arrow/Right Arrow and Comma/Period keyboard shortcuts to switch variants.
 - Loading a variant redraws the laboratory ingredients and availability immediately.
-- Moved the variant controls beside the result slot so they do not cover the game's `+` / `−` controls.
+- Moved the variant controls beside the result slot so they do not cover the game's `+` / `âˆ’` controls.
 - Re-anchored the variant controls to the laboratory root canvas so both buttons remain visible and clickable.
-- Added direct D-pad left/right switching while variants are active; the on-screen `+` / `−` controls remain available for craft count.
+- Added direct D-pad left/right switching while variants are active; the on-screen `+` / `âˆ’` controls remain available for craft count.
 
 ## [0.2.1] - 2026-09-30
 

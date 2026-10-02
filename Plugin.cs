@@ -17,7 +17,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "w00dst0ckOos.GK2LaboratoryFolioHelper";
     public const string PluginName = "GK2 Known Formula Helper";
-    public const string PluginVersion = "0.3.0";
+    public const string PluginVersion = "0.3.1";
 
     public static Plugin Instance { get; private set; }
 
