@@ -1,10 +1,13 @@
 using System.Collections.Generic;
+using GK2LaboratoryFolioHelper.Alchemy;
+using GK2LaboratoryFolioHelper.Compatibility;
 using GK2LaboratoryFolioHelper.Configuration;
+using GK2LaboratoryFolioHelper.UI.Typography;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.UI;
 
 // Opt-in visual fixture: real RectTransforms go through the production bounds
 // and visibility checks. It never adds pins to the player's pin manager.

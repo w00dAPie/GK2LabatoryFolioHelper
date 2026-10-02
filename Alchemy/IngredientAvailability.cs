@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Alchemy;
 
 internal static class IngredientAvailability
 {

@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using GK2LaboratoryFolioHelper.Infrastructure;
+using GK2LaboratoryFolioHelper.UI;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Alchemy;
 
 internal static class PinsInventoryWatcher
 {

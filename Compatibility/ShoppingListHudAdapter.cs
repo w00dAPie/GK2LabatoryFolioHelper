@@ -3,11 +3,12 @@ using System.Collections;
 using System.Reflection;
 using BepInEx.Bootstrap;
 using GK2LaboratoryFolioHelper.Infrastructure;
+using GK2LaboratoryFolioHelper.UI;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Compatibility;
 
 internal static class ShoppingListHudAdapter
 {

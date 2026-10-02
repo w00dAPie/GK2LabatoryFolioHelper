@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using GK2LaboratoryFolioHelper.Alchemy;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.UI;
 
 internal static class PinnedFormulaContentComparer
 {

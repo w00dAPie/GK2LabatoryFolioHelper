@@ -6,7 +6,7 @@ using LazyBearTechnology;
 using TMPro;
 using UnityEngine;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Input;
 
 internal sealed class AlchemyVariantNavigation
 {

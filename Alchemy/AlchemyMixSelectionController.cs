@@ -1,13 +1,15 @@
 using System.Collections.Generic;
+using GK2LaboratoryFolioHelper.Configuration;
 using GK2LaboratoryFolioHelper.Infrastructure;
+using GK2LaboratoryFolioHelper.Input;
+using GK2LaboratoryFolioHelper.UI;
 using UnityEngine;
+using UnityInput = UnityEngine.Input;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Alchemy;
 
 internal static class AlchemyMixSelectionController
 {
-    private const int MaxOptions = 10;
-
     private static readonly AlchemyVariantControls Controls = new();
     private static readonly AlchemyVariantNavigation Navigation = new();
 
@@ -27,11 +29,13 @@ internal static class AlchemyMixSelectionController
         int selectedIndex = 0
     )
     {
+        int maxMixVariants = LaboratoryConfig.MaxMixVariants.Value;
+
         if (
             target == null
             || !PinnedFormulaManager.TryGetBestMixesForLaboratory(
                 targetFormulaId,
-                MaxOptions,
+                maxMixVariants,
                 out List<PinnedFormulaManager.LaboratoryMixOption> mixes
             )
         )
@@ -46,12 +50,14 @@ internal static class AlchemyMixSelectionController
         index = Mathf.Clamp(selectedIndex, 0, options.Count - 1);
 
         LoadCurrent();
+
         if (Controls.Build(window, SelectPrevious, SelectNext))
         {
             Controls.UpdateCounter(index, options);
             Navigation.Refresh(window, Controls.Root);
+
             ModLog.Info(
-                $"Alchemy mix variant controls created beside ingredient slots | options={options.Count}"
+                $"Alchemy mix variant controls created beside ingredient slots | options={options.Count} | max={maxMixVariants}"
             );
         }
 
@@ -65,11 +71,11 @@ internal static class AlchemyMixSelectionController
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.Comma))
+        if (UnityInput.GetKeyDown(KeyCode.LeftArrow) || UnityInput.GetKeyDown(KeyCode.Comma))
         {
             Select(index - 1);
         }
-        else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.Period))
+        else if (UnityInput.GetKeyDown(KeyCode.RightArrow) || UnityInput.GetKeyDown(KeyCode.Period))
         {
             Select(index + 1);
         }
@@ -133,6 +139,7 @@ internal static class AlchemyMixSelectionController
         }
 
         PinnedFormulaManager.LaboratoryMixOption option = options[index];
+
         if (AlchemyRecipeLoader.LoadMix(window, option.MixId))
         {
             PinnedFormulaManager.SetSelectedLaboratoryMix(
@@ -143,6 +150,7 @@ internal static class AlchemyMixSelectionController
         }
 
         Controls.UpdateCounter(index, options);
+
         ModLog.Info(
             $"Alchemy mix variant selected | index={index + 1}/{options.Count} | mix='{option.MixId}'"
         );

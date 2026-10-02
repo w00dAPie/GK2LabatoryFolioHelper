@@ -1,6 +1,7 @@
+using GK2LaboratoryFolioHelper.Compatibility;
 using UnityEngine;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.UI;
 
 internal static class LaboratoryPinsPositioner
 {

@@ -9,5 +9,6 @@ internal static class ModConfig
         InputConfig.Bind(config);
         UiConfig.Bind(config);
         HudPreviewConfig.Bind(config);
+        LaboratoryConfig.Bind(config);
     }
 }

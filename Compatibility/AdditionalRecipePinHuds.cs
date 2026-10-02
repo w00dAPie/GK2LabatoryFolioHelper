@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using GK2LaboratoryFolioHelper.Infrastructure;
+using GK2LaboratoryFolioHelper.UI;
 using HarmonyLib;
 using UnityEngine;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Compatibility;
 
 // These mods are loaded by the game's mod loader / Kebo, not BepInEx.
 internal static class AdditionalRecipePinHuds

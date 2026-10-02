@@ -7,7 +7,7 @@ using GK2LaboratoryFolioHelper.Infrastructure;
 using TMPro;
 using UnityEngine;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.UI.Typography;
 
 internal static class TypographyFontResolver
 {

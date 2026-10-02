@@ -1,6 +1,6 @@
 using TMPro;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.UI.Typography;
 
 internal static class ModTypography
 {

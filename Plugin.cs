@@ -1,5 +1,5 @@
 using BepInEx;
-using GK2LaboratoryFolioHelper.Helpers;
+using GK2LaboratoryFolioHelper.Compatibility;
 using GK2LaboratoryFolioHelper.Runtime;
 
 namespace GK2LaboratoryFolioHelper;

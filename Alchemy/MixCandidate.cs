@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Alchemy;
 
 internal sealed class MixCandidate
 {

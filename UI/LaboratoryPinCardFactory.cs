@@ -1,9 +1,11 @@
+using GK2LaboratoryFolioHelper.Alchemy;
+using GK2LaboratoryFolioHelper.UI.Typography;
 using LazyBearTechnology;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.UI;
 
 internal static class LaboratoryPinCardFactory
 {

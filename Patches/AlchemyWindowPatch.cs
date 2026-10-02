@@ -1,7 +1,11 @@
 using System;
 using System.Reflection;
-using GK2LaboratoryFolioHelper.Helpers;
+using GK2LaboratoryFolioHelper.Alchemy;
+using GK2LaboratoryFolioHelper.Compatibility;
 using GK2LaboratoryFolioHelper.Infrastructure;
+using GK2LaboratoryFolioHelper.Input;
+using GK2LaboratoryFolioHelper.UI;
+using GK2LaboratoryFolioHelper.UI.Typography;
 using HarmonyLib;
 using LazyBearTechnology;
 

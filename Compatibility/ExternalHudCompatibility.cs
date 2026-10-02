@@ -1,6 +1,7 @@
+using GK2LaboratoryFolioHelper.UI;
 using UnityEngine;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Compatibility;
 
 internal static class ExternalHudCompatibility
 {

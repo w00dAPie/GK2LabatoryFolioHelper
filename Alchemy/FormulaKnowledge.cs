@@ -1,4 +1,4 @@
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Alchemy;
 
 internal static class FormulaKnowledge
 {

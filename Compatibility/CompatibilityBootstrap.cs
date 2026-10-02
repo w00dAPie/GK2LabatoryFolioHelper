@@ -1,4 +1,3 @@
-using GK2LaboratoryFolioHelper.Helpers;
 using GK2LaboratoryFolioHelper.Patches;
 using HarmonyLib;
 

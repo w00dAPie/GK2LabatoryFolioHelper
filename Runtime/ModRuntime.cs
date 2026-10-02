@@ -1,9 +1,11 @@
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using GK2LaboratoryFolioHelper.Alchemy;
 using GK2LaboratoryFolioHelper.Compatibility;
 using GK2LaboratoryFolioHelper.Configuration;
-using GK2LaboratoryFolioHelper.Helpers;
 using GK2LaboratoryFolioHelper.Infrastructure;
+using GK2LaboratoryFolioHelper.UI;
+using GK2LaboratoryFolioHelper.UI.Typography;
 using HarmonyLib;
 
 namespace GK2LaboratoryFolioHelper.Runtime;

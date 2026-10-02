@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Alchemy;
 
 // Compatibility facade for the rest of the mod. State, ranking and view building
 // live in focused services under Alchemy/.

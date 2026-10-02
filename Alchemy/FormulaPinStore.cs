@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GK2LaboratoryFolioHelper.Infrastructure;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Alchemy;
 
 internal static class FormulaPinStore
 {

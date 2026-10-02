@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using GK2LaboratoryFolioHelper.Alchemy;
 using GK2LaboratoryFolioHelper.Infrastructure;
+using GK2LaboratoryFolioHelper.UI.Typography;
 using HarmonyLib;
 using LazyBearTechnology;
 using TMPro;
@@ -9,7 +11,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.UI;
 
 internal sealed class AlchemyVariantControls
 {

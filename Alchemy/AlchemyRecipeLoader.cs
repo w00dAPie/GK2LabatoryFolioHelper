@@ -3,7 +3,7 @@ using System.Reflection;
 using GK2LaboratoryFolioHelper.Infrastructure;
 using HarmonyLib;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Alchemy;
 
 internal static class AlchemyRecipeLoader
 {

@@ -6,7 +6,7 @@ using LazyBearTechnology;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace GK2LaboratoryFolioHelper.Helpers;
+namespace GK2LaboratoryFolioHelper.Input;
 
 internal static class GamepadNavigationHelper
 {
